@@ -75,11 +75,6 @@ class MainActivity : ComponentActivity() {
     private val binderReceivedListener = Stellar.OnBinderReceivedListener {
         checkServerStatus()
         handlePendingSourceApp()
-        try {
-            appsModel.load()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private val binderDeadListener = Stellar.OnBinderDeadListener {
@@ -87,7 +82,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private val homeModel by viewModels<HomeViewModel>()
-    private val appsModel by appsViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -107,10 +101,7 @@ class MainActivity : ComponentActivity() {
 
             StellarTheme(themeMode = themeMode) {
                 TopAppBarProvider {
-                    MainScreenContent(
-                        homeViewModel = homeModel,
-                        appsViewModel = appsModel
-                    )
+                    MainScreenContent(homeViewModel = homeModel)
                 }
             }
         }
@@ -119,10 +110,7 @@ class MainActivity : ComponentActivity() {
         Stellar.addBinderDeadListener(binderDeadListener)
         
         checkServerStatus()
-        
-        if (Stellar.pingBinder() && appsModel.stellarApps.value == null) {
-            appsModel.load()
-        }
+
         handlePendingSourceApp()
     }
 
@@ -141,9 +129,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkServerStatus()
-        if (Stellar.pingBinder()) {
-            appsModel.load(true)
-        }
     }
 
     private fun checkServerStatus() {
@@ -213,25 +198,14 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenContent(
-    homeViewModel: HomeViewModel,
-    appsViewModel: AppsViewModel
+    homeViewModel: HomeViewModel
 ) {
     val topAppBarState = LocalTopAppBarState.current!!
     val navController = rememberNavController()
 
-    val startPage = remember { ThemePreferences.startPage.value }
-    val initialIndex = when (startPage) {
-        StartPage.HOME -> 0
-        StartPage.APPS -> 1
-        StartPage.TERMINAL -> 2
-    }
-    val startRoute = when (startPage) {
-        StartPage.HOME -> MainScreen.Home.route
-        StartPage.APPS -> MainScreen.Apps.route
-        StartPage.TERMINAL -> MainScreen.Terminal.route
-    }
-
-    var selectedIndex by remember { androidx.compose.runtime.mutableIntStateOf(initialIndex) }
+    // Fixed start destination: the start-page preference lived in the removed Settings screen,
+    // and MainScreen now exposes only Home and PasswordSwitch.
+    var selectedIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     val context = navController.context
@@ -274,7 +248,7 @@ private fun MainScreenContent(
     val navHostContent: @Composable (Modifier) -> Unit = { modifier ->
         NavHost(
             navController = navController,
-            startDestination = startRoute,
+            startDestination = MainScreen.Home.route,
             modifier = modifier,
             enterTransition = { fadeIn(animationSpec = tween(300)) },
             exitTransition = { fadeOut(animationSpec = tween(300)) },
@@ -291,43 +265,6 @@ private fun MainScreenContent(
                         homeViewModel = homeViewModel,
                         onNavigateToStarter = { isRoot, host, port, hasSecureSettings ->
                             context.startActivity(ManagerActivity.createStarterIntent(context, isRoot, host, port, hasSecureSettings))
-                        }
-                    )
-                }
-            }
-
-            navigation(
-                startDestination = "apps",
-                route = MainScreen.Apps.route
-            ) {
-                composable("apps") {
-                    AppsScreen(
-                        topAppBarState = topAppBarState,
-                        appsViewModel = appsViewModel
-                    )
-                }
-            }
-
-            navigation(
-                startDestination = "terminal",
-                route = MainScreen.Terminal.route
-            ) {
-                composable("terminal") {
-                    TerminalScreen(
-                        topAppBarState = topAppBarState
-                    )
-                }
-            }
-
-            navigation(
-                startDestination = "settings",
-                route = MainScreen.Settings.route
-            ) {
-                composable("settings") {
-                    SettingsScreen(
-                        topAppBarState = topAppBarState,
-                        onNavigateToLogs = {
-                            context.startActivity(ManagerActivity.createLogsIntent(context))
                         }
                     )
                 }

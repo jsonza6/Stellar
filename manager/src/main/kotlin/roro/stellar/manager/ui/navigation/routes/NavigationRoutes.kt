@@ -1,19 +1,21 @@
 package roro.stellar.manager.ui.navigation.routes
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.ui.graphics.vector.ImageVector
 import roro.stellar.manager.R
 
+/**
+ * Destinations shown in the bottom bar / navigation rail.
+ *
+ * This fork keeps only the two pages it needs: starting the service and switching the password
+ * manager. The Apps, Terminal and Settings screens still exist in the source tree because other
+ * packages depend on symbols they declare (for example `CommandItem` and `AppType`), but they are
+ * no longer reachable from the UI, so R8 drops them from a release build.
+ */
 enum class MainScreen(
     val route: String,
     val labelRes: Int,
@@ -27,29 +29,6 @@ enum class MainScreen(
         iconFilled = Icons.Filled.PlayArrow
     ),
 
-    Apps(
-        route = "apps_graph",
-        labelRes = R.string.nav_apps,
-        icon = Icons.Outlined.Apps,
-        iconFilled = Icons.Filled.Apps
-    ),
-
-    Terminal(
-        route = "terminal_graph",
-        labelRes = R.string.nav_terminal,
-        icon = Icons.Outlined.Terminal,
-        iconFilled = Icons.Filled.Terminal
-    ),
-
-    Settings(
-        route = "settings_graph",
-        labelRes = R.string.nav_settings,
-        icon = Icons.Outlined.Settings,
-        iconFilled = Icons.Filled.Settings
-    ),
-
-    // Appended last on purpose: StartPage and any persisted selectedIndex map to the first four
-    // entries by position, so new destinations must not be inserted in the middle.
     PasswordSwitch(
         route = "password_switch_graph",
         labelRes = R.string.nav_password_switch,
