@@ -1,160 +1,74 @@
 package roro.stellar.manager.ui.features.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Adb
-import androidx.compose.material.icons.filled.Cable
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import roro.stellar.manager.R
 import roro.stellar.manager.model.FeatureAvailability
 import roro.stellar.manager.model.RestrictedFeature
-import roro.stellar.manager.ui.theme.AppShape
+import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.HorizontalDivider
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Blocklist
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Info
+import top.yukonga.miuix.kmp.icon.extended.Link
+import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.icon.extended.SearchDevice
+import top.yukonga.miuix.kmp.icon.extended.Unlock
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+/** 圆角方块图标底座，HyperOS 风格的状态/入口图标容器。 */
 @Composable
-private fun ModernStatusCard(
+private fun LeadingIconBadge(
     icon: ImageVector,
-    title: String,
-    subtitle: String,
-    isPositive: Boolean,
-    modifier: Modifier = Modifier,
-    action: @Composable (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit = {}
+    tint: Color,
+    container: Color,
+    size: Dp = 44.dp,
 ) {
-    val backgroundColor = if (isPositive) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.errorContainer
-    }
-    val contentColor = if (isPositive) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onErrorContainer
-    }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ),
-        shape = AppShape.shapes.cardLarge,
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(size / 3.6f))
+            .background(container),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(AppShape.shapes.iconSmall)
-                            .background(contentColor.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = contentColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = contentColor
-                        )
-                        if (subtitle.isNotEmpty()) {
-                            Text(
-                                text = subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = contentColor.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                }
-
-                if (action != null) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        action()
-                    }
-                }
-            }
-
-            content()
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(size * 0.5f),
+        )
     }
 }
 
+/**
+ * 服务状态卡：运行中显示为高亮色卡片，并附带版本与运行模式。
+ */
 @Composable
 fun ServerStatusCard(
     isRunning: Boolean,
@@ -162,47 +76,65 @@ fun ServerStatusCard(
     apiVersion: Int,
     onStopClick: () -> Unit
 ) {
-    val user = if (isRoot) "Root" else "ADB"
+    val container = if (isRunning) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.errorContainer
+    val onContainer = if (isRunning) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onErrorContainer
 
-    ModernStatusCard(
-        icon = if (isRunning) Icons.Default.CheckCircle else Icons.Default.Error,
-        title = stringResource(R.string.service_status),
-        subtitle = if (isRunning) stringResource(R.string.service_running) else stringResource(R.string.service_not_running),
-        isPositive = isRunning,
-        action = if (isRunning) {
-            {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(AppShape.shapes.iconSmall)
-                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f))
-                        .clickable(onClick = onStopClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PowerSettingsNew,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(color = container, contentColor = onContainer),
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                LeadingIconBadge(
+                    icon = if (isRunning) MiuixIcons.Ok else MiuixIcons.Info,
+                    tint = onContainer,
+                    container = onContainer.copy(alpha = 0.14f),
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.service_status),
+                        style = MiuixTheme.textStyles.title3,
+                        color = onContainer,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = if (isRunning) stringResource(R.string.service_running) else stringResource(R.string.service_not_running),
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = onContainer.copy(alpha = 0.72f),
                     )
                 }
+
+                if (isRunning) {
+                    IconButton(onClick = onStopClick) {
+                        Icon(
+                            imageVector = MiuixIcons.Close,
+                            contentDescription = stringResource(R.string.stop_service),
+                            tint = onContainer,
+                        )
+                    }
+                }
             }
-        } else null
-    ) {
-        val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-        AnimatedVisibility(
-            visible = isRunning,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column {
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = contentColor.copy(alpha = 0.2f))
-                Spacer(modifier = Modifier.height(12.dp))
+            if (isRunning) {
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = onContainer.copy(alpha = 0.18f))
+                Spacer(Modifier.height(12.dp))
 
-                InfoRow(stringResource(R.string.version), "${apiVersion / 100}.${(apiVersion % 100) / 10}.${apiVersion % 10}", contentColor, Icons.Default.Info)
-                InfoRow(stringResource(R.string.run_mode), user, contentColor, if (isRoot) Icons.Default.Security else Icons.Default.Adb)
+                InfoRow(
+                    label = stringResource(R.string.version),
+                    value = "${apiVersion / 100}.${(apiVersion % 100) / 10}.${apiVersion % 10}",
+                    contentColor = onContainer,
+                )
+                InfoRow(
+                    label = stringResource(R.string.run_mode),
+                    value = if (isRoot) "Root" else "ADB",
+                    contentColor = onContainer,
+                )
             }
         }
     }
@@ -212,98 +144,73 @@ fun ServerStatusCard(
 fun InfoRow(
     label: String,
     value: String,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    icon: ImageVector? = null
+    contentColor: Color = MiuixTheme.colorScheme.onSurfaceContainer,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = contentColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor.copy(alpha = 0.7f)
-            )
-        }
+        Text(
+            text = label,
+            style = MiuixTheme.textStyles.footnote1,
+            color = contentColor.copy(alpha = 0.72f),
+        )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = contentColor
+            style = MiuixTheme.textStyles.footnote1,
+            color = contentColor,
         )
     }
 }
 
+/**
+ * ADB 受限能力提示卡。
+ */
 @Composable
 fun AdbRestrictedHintCard(
     onViewClick: () -> Unit
 ) {
+    val container = MiuixTheme.colorScheme.errorContainer
+    val onContainer = MiuixTheme.colorScheme.onErrorContainer
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShape.shapes.cardLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors = CardDefaults.defaultColors(color = container, contentColor = onContainer),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.16f),
-                        shape = AppShape.shapes.iconSmall
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            LeadingIconBadge(
+                icon = MiuixIcons.Blocklist,
+                tint = onContainer,
+                container = onContainer.copy(alpha = 0.14f),
+            )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.adb_restricted_hint_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    style = MiuixTheme.textStyles.subtitle,
+                    color = onContainer,
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.adb_restricted_hint_message),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.78f)
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = onContainer.copy(alpha = 0.78f),
                 )
             }
 
             Button(
                 onClick = onViewClick,
-                shape = AppShape.shapes.buttonMedium
             ) {
-                Text(text = stringResource(R.string.view))
+                Text(stringResource(R.string.view))
             }
         }
     }
@@ -313,18 +220,17 @@ fun AdbRestrictedHintCard(
 fun RestrictedFeatureList(
     features: List<FeatureAvailability>
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         if (features.isEmpty()) {
             Text(
                 text = stringResource(R.string.no_restricted_features),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                modifier = Modifier.padding(16.dp),
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         } else {
-            features.forEach { feature ->
+            features.forEachIndexed { index, feature ->
+                if (index > 0) HorizontalDivider(Modifier.padding(start = 16.dp))
                 RestrictedFeatureRow(feature)
             }
         }
@@ -335,101 +241,37 @@ fun RestrictedFeatureList(
 private fun RestrictedFeatureRow(
     feature: FeatureAvailability
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val expandable = !feature.available && feature.children.isNotEmpty()
-    val statusColor = if (feature.available) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.error
-    }
-    val statusText = if (feature.available) {
-        stringResource(R.string.feature_status_available)
-    } else {
-        stringResource(R.string.feature_status_restricted)
-    }
+    val available = feature.available
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(if (expandable) Modifier.clickable { expanded = !expanded } else Modifier),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (feature.available) Icons.Default.CheckCircle else Icons.Default.Error,
-                contentDescription = null,
-                tint = statusColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = stringResource(feature.feature.titleRes()),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = statusColor
-            )
-            if (expandable) {
+        BasicComponent(
+            title = stringResource(feature.feature.titleRes()),
+            summary = if (available) stringResource(R.string.feature_status_available)
+            else stringResource(R.string.feature_status_restricted),
+            startAction = {
                 Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    imageVector = if (available) MiuixIcons.Ok else MiuixIcons.Blocklist,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    tint = if (available) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.error,
                 )
-            }
-        }
+            },
+        )
 
-        AnimatedVisibility(
-            visible = expanded && expandable,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 32.dp, top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                feature.children.forEach { child ->
-                    RestrictedFeatureChildRow(child)
-                }
-            }
+        feature.children.forEach { child ->
+            BasicComponent(
+                modifier = Modifier.padding(start = 24.dp),
+                title = stringResource(child.feature.titleRes()),
+                summary = stringResource(R.string.feature_status_restricted),
+                startAction = {
+                    Icon(
+                        imageVector = MiuixIcons.Blocklist,
+                        contentDescription = null,
+                        tint = MiuixTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
+            )
         }
-    }
-}
-
-@Composable
-private fun RestrictedFeatureChildRow(
-    feature: FeatureAvailability
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(16.dp)
-        )
-        Text(
-            text = stringResource(feature.feature.titleRes()),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = stringResource(R.string.feature_status_restricted),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.error
-        )
     }
 }
 
@@ -447,183 +289,94 @@ private fun RestrictedFeature.titleRes(): Int = when (this) {
     RestrictedFeature.SECURE_SETTINGS_WRITE -> R.string.feature_secure_settings_write
 }
 
+/**
+ * 启动入口卡片：图标 + 标题 + 说明 + 操作按钮。
+ */
+@Composable
+private fun ActionCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    actionText: String,
+    onAction: () -> Unit,
+    enabled: Boolean = true,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            LeadingIconBadge(
+                icon = icon,
+                tint = MiuixTheme.colorScheme.primary,
+                container = MiuixTheme.colorScheme.primaryContainer,
+            )
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MiuixTheme.textStyles.subtitle,
+                    color = MiuixTheme.colorScheme.onSurfaceContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                )
+            }
+
+            Button(
+                onClick = onAction,
+                enabled = enabled,
+            ) {
+                Text(actionText)
+            }
+        }
+    }
+}
+
 @Composable
 fun StartRootCard(
     isRestart: Boolean,
     onStartClick: () -> Unit = {}
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = AppShape.shapes.cardLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = AppShape.shapes.iconSmall
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Tag,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (isRestart) stringResource(R.string.root_restart) else stringResource(R.string.root_start),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.root_start_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Button(
-                onClick = onStartClick,
-                shape = AppShape.shapes.buttonMedium
-            ) {
-                Text(text = if (isRestart) stringResource(R.string.restart) else stringResource(R.string.start))
-            }
-        }
-    }
+    ActionCard(
+        icon = MiuixIcons.Unlock,
+        title = if (isRestart) stringResource(R.string.root_restart) else stringResource(R.string.root_start),
+        subtitle = stringResource(R.string.root_start_subtitle),
+        actionText = if (isRestart) stringResource(R.string.restart) else stringResource(R.string.start),
+        onAction = onStartClick,
+    )
 }
 
 @Composable
 fun StartWirelessAdbCard(
     onStartClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = AppShape.shapes.cardLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = AppShape.shapes.iconSmall
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Wifi,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.wireless_debugging),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.wireless_debugging_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Button(
-                onClick = onStartClick,
-                shape = AppShape.shapes.buttonMedium
-            ) {
-                Text(text = stringResource(R.string.start))
-            }
-        }
-    }
+    ActionCard(
+        icon = MiuixIcons.SearchDevice,
+        title = stringResource(R.string.wireless_debugging),
+        subtitle = stringResource(R.string.wireless_debugging_subtitle),
+        actionText = stringResource(R.string.start),
+        onAction = onStartClick,
+    )
 }
 
 @Composable
 fun StartWiredAdbCard(
     onButtonClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = AppShape.shapes.cardLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = AppShape.shapes.iconSmall
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Cable,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.wired_adb),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.wired_adb_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Button(
-                onClick = onButtonClick,
-                shape = AppShape.shapes.buttonMedium
-            ) {
-                Text(text = stringResource(R.string.view))
-            }
-        }
-    }
+    ActionCard(
+        icon = MiuixIcons.Link,
+        title = stringResource(R.string.wired_adb),
+        subtitle = stringResource(R.string.wired_adb_subtitle),
+        actionText = stringResource(R.string.view),
+        onAction = onButtonClick,
+    )
 }

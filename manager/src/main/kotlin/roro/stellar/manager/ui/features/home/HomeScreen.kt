@@ -1,19 +1,12 @@
 package roro.stellar.manager.ui.features.home
 
 import android.annotation.SuppressLint
-import roro.stellar.manager.compat.BuildUtils.atLeast30
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -24,31 +17,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import roro.stellar.Stellar
 import roro.stellar.manager.R
+import roro.stellar.manager.compat.BuildUtils.atLeast30
 import roro.stellar.manager.compat.ClipboardUtils
 import roro.stellar.manager.startup.command.Starter
-import roro.stellar.manager.ui.components.LocalScreenConfig
 import roro.stellar.manager.ui.components.StellarDialog
 import roro.stellar.manager.ui.navigation.components.StandardLargeTopAppBar
-import roro.stellar.manager.ui.navigation.components.createTopAppBarScrollBehavior
-import roro.stellar.manager.ui.theme.AppSpacing
 import roro.stellar.manager.util.EnvironmentUtils
 import roro.stellar.manager.util.UserHandleCompat
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @SuppressLint("LocalContextGetResourceValueCall")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    topAppBarState: TopAppBarState,
+    scrollBehavior: ScrollBehavior,
     homeViewModel: HomeViewModel,
     onNavigateToStarter: (isRoot: Boolean, host: String?, port: Int, hasSecureSettings: Boolean) -> Unit = { _, _, _, _ -> }
 ) {
-    val scrollBehavior = createTopAppBarScrollBehavior(topAppBarState)
     val context = LocalContext.current
     val serviceStatusResource by homeViewModel.serviceStatus.observeAsState()
-    val screenConfig = LocalScreenConfig.current
-
     val serviceStatus = serviceStatusResource?.data
 
     val isRunning = serviceStatus?.isRunning ?: false
@@ -60,32 +53,30 @@ fun HomeScreen(
     var showAdbCommandDialog by remember { mutableStateOf(false) }
     var showAdbRestrictedFeaturesDialog by remember { mutableStateOf(false) }
 
-    val gridColumns = screenConfig.gridColumns
+    val listState = rememberLazyListState()
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             StandardLargeTopAppBar(
-                title = "Stellar",
-                scrollBehavior = scrollBehavior
+                title = stringResource(R.string.app_name),
+                scrollBehavior = scrollBehavior,
             )
         }
-    ) { paddingValues ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(gridColumns),
-            modifier = Modifier.fillMaxSize(),
+    ) { padding ->
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding() + AppSpacing.topBarContentSpacing,
-                bottom = AppSpacing.screenBottomPadding,
-                start = AppSpacing.screenHorizontalPadding,
-                end = AppSpacing.screenHorizontalPadding
+                top = padding.calculateTopPadding(),
+                bottom = padding.calculateBottomPadding() + 16.dp,
+                start = 12.dp,
+                end = 12.dp,
             ),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.itemSpacing),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.itemSpacing)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item(span = { GridItemSpan(gridColumns) }) {
+            item(key = "status") {
                 ServerStatusCard(
                     isRunning = isRunning,
                     isRoot = isRoot,
@@ -95,7 +86,7 @@ fun HomeScreen(
             }
 
             if (isRunning && !serviceStatus.permission) {
-                item(span = { GridItemSpan(gridColumns) }) {
+                item(key = "restricted_hint") {
                     AdbRestrictedHintCard(
                         onViewClick = { showAdbRestrictedFeaturesDialog = true }
                     )
@@ -103,8 +94,12 @@ fun HomeScreen(
             }
 
             if (isPrimaryUser) {
+                item(key = "start_title") {
+                    SmallTitle(text = stringResource(R.string.home_start_section))
+                }
+
                 if (hasRoot) {
-                    item {
+                    item(key = "root") {
                         StartRootCard(
                             isRestart = isRunning && isRoot,
                             onStartClick = { onNavigateToStarter(true, null, 0, false) }
@@ -113,21 +108,21 @@ fun HomeScreen(
                 }
 
                 if (atLeast30 || EnvironmentUtils.getAdbTcpPort() > 0) {
-                    item {
+                    item(key = "wireless") {
                         StartWirelessAdbCard(
                             onStartClick = { onNavigateToStarter(false, "127.0.0.1", 0, false) }
                         )
                     }
                 }
 
-                item {
+                item(key = "wired") {
                     StartWiredAdbCard(
                         onButtonClick = { showAdbCommandDialog = true }
                     )
                 }
 
                 if (!hasRoot) {
-                    item {
+                    item(key = "root_disabled") {
                         StartRootCard(
                             isRestart = isRunning && isRoot,
                             onStartClick = {
@@ -148,7 +143,7 @@ fun HomeScreen(
             dismissText = stringResource(R.string.restart),
             onConfirm = {
                 if (Stellar.pingBinder()) {
-                    try { Stellar.exit() } catch (_: Throwable) {}
+                    runCatching { Stellar.exit() }
                 }
                 showPowerDialog = false
             },
@@ -159,8 +154,8 @@ fun HomeScreen(
         ) {
             Text(
                 text = stringResource(R.string.stop_service_message),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         }
     }
@@ -179,8 +174,8 @@ fun HomeScreen(
         ) {
             Text(
                 text = Starter.adbCommand,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         }
     }

@@ -17,7 +17,8 @@ Language: [English](README_en.md) | 中文
    `credential_service`、`credential_service_primary`、`autofill_service` 三项，
    并具备**事务语义**：写前快照比对、逐项写入、读回校验、失败逆序回滚。
 
-界面只有两个页面：**启动（Home）** 与 **密码切换（PasswordSwitch）**。
+界面只有两个页面：**启动（Home）** 与 **密码切换（PasswordSwitch）**，采用
+**Miuix（HyperOS / MIUI 设计语言）** 构建，整体结构参考 SukiSU 管理器（底部导航 + 分组卡片 + 状态标签）。
 
 ## 构建
 

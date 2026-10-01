@@ -18,7 +18,9 @@ A **self-use, trimmed-down fork** of Stellar (a deeply customized Shizuku fork).
    **transactional semantics**: pre-write snapshot comparison, per-key writes, read-back
    verification, and reverse-order rollback on failure.
 
-The UI has only two pages: **Home** (start the service) and **PasswordSwitch**.
+The UI has only two pages: **Home** (start the service) and **PasswordSwitch**, built with
+**Miuix** (HyperOS / MIUI design language) in the same shape as the SukiSU manager
+(bottom navigation + grouped cards + status tags).
 
 ## Build
 

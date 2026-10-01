@@ -11,39 +11,53 @@ import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
-import roro.stellar.manager.compat.BuildUtils.atLeast28
-import roro.stellar.manager.compat.BuildUtils.atLeast30
-import roro.stellar.manager.compat.BuildUtils.atLeast33
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
@@ -59,18 +73,44 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import roro.stellar.Stellar
+import roro.stellar.manager.AppConstants
 import roro.stellar.manager.R
+import roro.stellar.manager.StellarSettings
 import roro.stellar.manager.adb.AdbMdns
 import roro.stellar.manager.adb.AdbPairingService
 import roro.stellar.manager.adb.AdbWirelessHelper
-import roro.stellar.manager.AppConstants
+import roro.stellar.manager.compat.BuildUtils.atLeast28
+import roro.stellar.manager.compat.BuildUtils.atLeast30
+import roro.stellar.manager.compat.BuildUtils.atLeast33
 import roro.stellar.manager.compat.LocalNetwork
 import roro.stellar.manager.startup.command.Starter
-import roro.stellar.manager.StellarSettings
 import roro.stellar.manager.ui.navigation.components.FixedTopAppBar
-import roro.stellar.manager.ui.theme.AppShape
-import roro.stellar.manager.ui.theme.AppSpacing
 import roro.stellar.manager.util.EnvironmentUtils
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.Blocklist
+import top.yukonga.miuix.kmp.icon.extended.File
+import top.yukonga.miuix.kmp.icon.extended.Info
+import top.yukonga.miuix.kmp.icon.extended.Link
+import top.yukonga.miuix.kmp.icon.extended.Lock
+import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Scan
+import top.yukonga.miuix.kmp.icon.extended.Search
+import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.Unlock
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.EOFException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -91,7 +131,6 @@ data class StepData(
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun StarterScreen(
     isRoot: Boolean,
@@ -116,9 +155,7 @@ internal fun StarterScreen(
 
     val scrollState = rememberScrollState()
 
-    val horizontalPadding = if (isLandscape) 48.dp else AppSpacing.screenHorizontalPadding
-
-    val hasLocalNetworkPermission by viewModel.hasLocalNetworkPermission.collectAsState()
+    val horizontalPadding = if (isLandscape) 48.dp else 16.dp
 
     // Android 17 (API 37) blocks local network access - and therefore all mDNS
     // discovery used for wireless ADB - until ACCESS_LOCAL_NETWORK is granted.
@@ -147,7 +184,7 @@ internal fun StarterScreen(
             val targetScroll = (currentStepIndex * 140).coerceAtMost(scrollState.maxValue)
             scrollState.animateScrollTo(
                 targetScroll,
-                animationSpec = tween(durationMillis = 500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
             )
         }
     }
@@ -160,13 +197,16 @@ internal fun StarterScreen(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0),
         topBar = {
             FixedTopAppBar(
                 title = if (isRoot) stringResource(R.string.root_start_title) else stringResource(R.string.wireless_debugging_start),
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            imageVector = MiuixIcons.Back,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MiuixTheme.colorScheme.onSurface,
+                        )
                     }
                 }
             )
@@ -177,11 +217,8 @@ internal fun StarterScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(paddingValues)
-                .padding(
-                    horizontal = horizontalPadding,
-                    vertical = AppSpacing.topBarContentSpacing
-                )
-                .padding(bottom = AppSpacing.screenBottomPadding)
+                .padding(horizontal = horizontalPadding, vertical = 12.dp)
+                .padding(bottom = 16.dp)
         ) {
             steps.forEachIndexed { index, step ->
                 // 跳过不需要的可选步骤
@@ -197,7 +234,7 @@ internal fun StarterScreen(
 
                 AnimatedVisibility(
                     visible = visible,
-                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { -24 }
+                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = FastOutSlowInEasing)) { -24 }
                 ) {
                     val animatedAlpha by animateFloatAsState(
                         targetValue = if (step.status == StepStatus.PENDING) 0.7f else 1f,
@@ -229,20 +266,20 @@ internal fun StarterScreen(
                     delay(300.milliseconds)
                     scrollState.animateScrollTo(
                         scrollState.maxValue,
-                        animationSpec = tween(500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                        animationSpec = tween(500, easing = FastOutSlowInEasing)
                     )
                 }
 
                 AnimatedVisibility(
                     visible = logVisible,
-                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { -24 }
+                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = FastOutSlowInEasing)) { -24 }
                 ) {
                     Column {
                         if (outputLines.isNotEmpty()) {
                             TimelineLogCard(
                                 isLast = false,
                                 title = stringResource(R.string.error_report),
-                                icon = Icons.Filled.Description,
+                                icon = MiuixIcons.File,
                                 command = command,
                                 outputLines = outputLines,
                                 context = context,
@@ -254,14 +291,14 @@ internal fun StarterScreen(
                         TimelineActionStep(
                             isLast = false,
                             title = stringResource(R.string.retry),
-                            icon = Icons.Filled.Refresh,
+                            icon = MiuixIcons.Refresh,
                             onClick = { viewModel.retry() }
                         )
 
                         TimelineActionStep(
                             isLast = true,
                             title = stringResource(R.string.back),
-                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            icon = MiuixIcons.Back,
                             onClick = onClose
                         )
                     }
@@ -276,18 +313,18 @@ internal fun StarterScreen(
                     delay(300.milliseconds)
                     scrollState.animateScrollTo(
                         scrollState.maxValue,
-                        animationSpec = tween(500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                        animationSpec = tween(500, easing = FastOutSlowInEasing)
                     )
                 }
 
                 AnimatedVisibility(
                     visible = logVisible,
-                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) { -24 }
+                    enter = fadeIn(tween(300)) + slideInVertically(tween(300, easing = FastOutSlowInEasing)) { -24 }
                 ) {
                     TimelineLogCard(
                         isLast = true,
                         title = stringResource(R.string.startup_log),
-                        icon = Icons.Filled.Description,
+                        icon = MiuixIcons.File,
                         command = command,
                         outputLines = outputLines,
                         context = context,
@@ -335,16 +372,15 @@ private fun StepActionContent(
         if (!hasLocalNetworkPermission && !viewModel.isRootMode()) {
             Text(
                 text = stringResource(R.string.need_local_network_permission),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.error
             )
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = { localNetworkPermissionLauncher.launch(LocalNetwork.PERMISSION) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShape.shapes.cardMedium
             ) {
-                Text(stringResource(R.string.grant_permission), Modifier.padding(vertical = 4.dp))
+                Text(stringResource(R.string.grant_permission))
             }
             Spacer(Modifier.height(12.dp))
         }
@@ -355,11 +391,14 @@ private fun StepActionContent(
                     Button(
                         onClick = { viewModel.enableWirelessDebugging() },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = AppShape.shapes.cardMedium
                     ) {
-                        Icon(Icons.Filled.Wifi, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = MiuixIcons.Link,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.enable_wireless_debugging), Modifier.padding(vertical = 4.dp))
+                        Text(stringResource(R.string.enable_wireless_debugging))
                     }
                 } else {
                     Button(
@@ -376,23 +415,24 @@ private fun StepActionContent(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = AppShape.shapes.cardMedium
                     ) {
-                        Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = MiuixIcons.Settings,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.open_dev_options), Modifier.padding(vertical = 4.dp))
+                        Text(stringResource(R.string.open_dev_options))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedButton(
+                TextButton(
+                    text = stringResource(R.string.already_enabled_continue),
                     onClick = { viewModel.continueAfterSetup() },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = AppShape.shapes.cardMedium
-                ) {
-                    Text(stringResource(R.string.already_enabled_continue), Modifier.padding(vertical = 4.dp))
-                }
+                )
             }
 
             stringResource(R.string.grant_notification_permission) -> {
@@ -413,9 +453,8 @@ private fun StepActionContent(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = AppShape.shapes.cardMedium
                     ) {
-                        Text(stringResource(R.string.grant_permission), Modifier.padding(vertical = 4.dp))
+                        Text(stringResource(R.string.grant_permission))
                     }
                 }
             }
@@ -423,34 +462,36 @@ private fun StepActionContent(
             stringResource(R.string.wireless_debugging_pairing) -> {
                 val isMiuiOrHyperOs = remember {
                     android.os.SystemProperties.get("ro.miui.ui.version.name").isNotEmpty() ||
-                    android.os.SystemProperties.get("ro.mi.os.version.name").isNotEmpty()
+                        android.os.SystemProperties.get("ro.mi.os.version.name").isNotEmpty()
                 }
                 if (isMiuiOrHyperOs) {
                     Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.defaultColors(
+                            color = MiuixTheme.colorScheme.errorContainer,
+                            contentColor = MiuixTheme.colorScheme.onErrorContainer,
                         ),
-                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.padding(14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Icon(
-                                Icons.Default.Warning,
+                                imageVector = MiuixIcons.Info,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer
+                                tint = MiuixTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp),
                             )
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     stringResource(R.string.miui_pairing_warning_title),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                    style = MiuixTheme.textStyles.subtitle,
+                                    color = MiuixTheme.colorScheme.onErrorContainer,
                                 )
                                 Text(
                                     stringResource(R.string.miui_pairing_warning_body),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                    style = MiuixTheme.textStyles.footnote1,
+                                    color = MiuixTheme.colorScheme.onErrorContainer,
                                 )
                             }
                         }
@@ -471,21 +512,52 @@ private fun StepActionContent(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = AppShape.shapes.cardMedium
                 ) {
-                    Text(stringResource(R.string.open_wireless_debugging_settings), Modifier.padding(vertical = 4.dp))
+                    Text(stringResource(R.string.open_wireless_debugging_settings))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedButton(
+                TextButton(
+                    text = stringResource(R.string.pairing_done_continue),
                     onClick = { viewModel.continueAfterSetup() },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = AppShape.shapes.cardMedium
-                ) {
-                    Text(stringResource(R.string.pairing_done_continue), Modifier.padding(vertical = 4.dp))
-                }
+                )
             }
+        }
+    }
+}
+
+/** 时间线左侧的圆点 + 连接线。 */
+@Composable
+private fun TimelineRail(
+    dotColor: Color,
+    dotContainerColor: Color,
+    connectorColor: Color,
+    isLast: Boolean,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(32.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(dotContainerColor, CircleShape)
+                .padding(5.dp)
+                .background(dotColor, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
+        if (!isLast) {
+            Box(
+                Modifier
+                    .width(2.dp)
+                    .weight(1f)
+                    .background(connectorColor)
+            )
         }
     }
 }
@@ -506,156 +578,100 @@ private fun TimelineStep(
     val isError = status == StepStatus.ERROR
     val isWarning = status == StepStatus.WARNING
 
+    val accent = when {
+        isError -> MiuixTheme.colorScheme.error
+        isWarning -> MiuixTheme.colorScheme.secondary
+        else -> MiuixTheme.colorScheme.primary
+    }
+    val container = when {
+        isError -> MiuixTheme.colorScheme.errorContainer
+        isWarning -> MiuixTheme.colorScheme.secondaryContainer
+        isPending -> MiuixTheme.colorScheme.surfaceVariant
+        else -> MiuixTheme.colorScheme.surfaceContainer
+    }
+    val onContainer = when {
+        isError -> MiuixTheme.colorScheme.onErrorContainer
+        isWarning -> MiuixTheme.colorScheme.onSecondaryContainer
+        isPending -> MiuixTheme.colorScheme.onSurfaceVariantSummary
+        else -> MiuixTheme.colorScheme.onSurfaceContainer
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(36.dp)
+        TimelineRail(
+            dotColor = if (isPending) MiuixTheme.colorScheme.outline else accent,
+            dotContainerColor = if (isPending) MiuixTheme.colorScheme.surfaceVariant else accent.copy(alpha = 0.18f),
+            connectorColor = if (isCompleted || isError) accent.copy(alpha = 0.35f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.25f),
+            isLast = isLast,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(
-                        when {
-                            isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                            isError -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                            isWarning -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
-                            isRunning -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f)
-                        },
-                        CircleShape
-                    )
-                    .padding(6.dp)
-                    .background(
-                        when {
-                            isCompleted -> MaterialTheme.colorScheme.primary
-                            isError -> MaterialTheme.colorScheme.error
-                            isWarning -> MaterialTheme.colorScheme.tertiary
-                            isRunning -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        },
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isCompleted -> Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    isError -> Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onError,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    isWarning -> Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    isRunning -> CircularProgressIndicator(
-                        modifier = Modifier.size(14.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-            if (!isLast) {
-                Box(
-                    Modifier
-                        .width(2.dp)
-                        .weight(1f)
-                        .background(
-                            when {
-                                isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                                isError -> MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
-                                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                            }
-                        )
+            when {
+                isCompleted || isWarning -> Icon(
+                    imageVector = if (isWarning) MiuixIcons.Info else MiuixIcons.Ok,
+                    contentDescription = null,
+                    tint = MiuixTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(15.dp)
+                )
+
+                isError -> Icon(
+                    imageVector = MiuixIcons.Blocklist,
+                    contentDescription = null,
+                    tint = MiuixTheme.colorScheme.onError,
+                    modifier = Modifier.size(15.dp)
+                )
+
+                isRunning -> CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
                 )
             }
         }
 
-        Surface(
+        Card(
             modifier = Modifier
                 .weight(1f)
                 .padding(bottom = 12.dp),
-            shape = AppShape.shapes.cardLarge,
-            color = when {
-                isCompleted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                isError -> MaterialTheme.colorScheme.errorContainer
-                isWarning -> MaterialTheme.colorScheme.tertiaryContainer
-                isRunning -> MaterialTheme.colorScheme.surfaceContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
+            colors = CardDefaults.defaultColors(color = container, contentColor = onContainer),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(18.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                when {
-                                    isCompleted -> MaterialTheme.colorScheme.primaryContainer
-                                    isError -> MaterialTheme.colorScheme.errorContainer
-                                    isWarning -> MaterialTheme.colorScheme.tertiaryContainer
-                                    isRunning -> MaterialTheme.colorScheme.primaryContainer
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                },
-                                AppShape.shapes.iconSmall
-                            ),
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(accent.copy(alpha = 0.16f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = when {
-                                isCompleted -> MaterialTheme.colorScheme.primary
-                                isError -> MaterialTheme.colorScheme.error
-                                isWarning -> MaterialTheme.colorScheme.tertiary
-                                isRunning -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            },
-                            modifier = Modifier.size(24.dp)
+                            tint = if (isPending) onContainer.copy(alpha = 0.5f) else accent,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = when {
-                            isPending -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            isError -> MaterialTheme.colorScheme.onErrorContainer
-                            isWarning -> MaterialTheme.colorScheme.onTertiaryContainer
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
+                        style = MiuixTheme.textStyles.subtitle,
+                        color = if (isPending) onContainer.copy(alpha = 0.55f) else onContainer,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = when {
-                        isPending -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        isError -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                        isWarning -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = if (isPending) onContainer.copy(alpha = 0.55f) else onContainer.copy(alpha = 0.85f),
                 )
                 action?.invoke(this)
             }
@@ -675,94 +691,68 @@ private fun TimelineLogCard(
     isSuccess: Boolean,
     errorMessage: String? = null
 ) {
+    val accent = if (isSuccess) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.error
+    val container = if (isSuccess) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.errorContainer
+    val onContainer = if (isSuccess) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onErrorContainer
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(36.dp)
+        TimelineRail(
+            dotColor = accent,
+            dotContainerColor = accent.copy(alpha = 0.18f),
+            connectorColor = accent.copy(alpha = 0.35f),
+            isLast = isLast,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(
-                        if (isSuccess) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                        else MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                        CircleShape
-                    )
-                    .padding(6.dp)
-                    .background(
-                        if (isSuccess) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.error,
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
-                    contentDescription = null,
-                    tint = if (isSuccess) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-            if (!isLast) {
-                Box(
-                    Modifier
-                        .width(2.dp)
-                        .weight(1f)
-                        .background(
-                            if (isSuccess) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                            else MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
-                        )
-                )
-            }
+            Icon(
+                imageVector = if (isSuccess) MiuixIcons.Ok else MiuixIcons.Blocklist,
+                contentDescription = null,
+                tint = if (isSuccess) MiuixTheme.colorScheme.onPrimary else MiuixTheme.colorScheme.onError,
+                modifier = Modifier.size(15.dp)
+            )
         }
-        Surface(
+
+        Card(
             modifier = Modifier
                 .weight(1f)
                 .padding(bottom = 12.dp),
-            shape = AppShape.shapes.cardLarge,
-            color = MaterialTheme.colorScheme.surfaceContainer
+            colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surfaceContainer),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(18.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                if (isSuccess) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.errorContainer,
-                                AppShape.shapes.iconSmall
-                            ),
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(container),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = if (isSuccess) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
+                            tint = accent,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MiuixTheme.textStyles.subtitle,
+                        color = MiuixTheme.colorScheme.onSurfaceContainer,
                         modifier = Modifier.weight(1f)
                     )
-                    FilledTonalButton(
+                    TextButton(
+                        text = stringResource(R.string.copy),
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
                                 as android.content.ClipboardManager
@@ -803,16 +793,7 @@ private fun TimelineLogCard(
                             clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Stellar Log", logText))
                             Toast.makeText(context, context.getString(R.string.log_copied), Toast.LENGTH_SHORT).show()
                         },
-                        shape = AppShape.shapes.buttonSmall14
-                    ) {
-                        Icon(
-                            Icons.Filled.ContentCopy,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.copy), style = MaterialTheme.typography.labelMedium)
-                    }
+                    )
                 }
             }
         }
@@ -832,77 +813,52 @@ private fun TimelineActionStep(
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(36.dp)
+        TimelineRail(
+            dotColor = MiuixTheme.colorScheme.primary,
+            dotContainerColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f),
+            connectorColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.35f),
+            isLast = isLast,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        CircleShape
-                    )
-                    .padding(6.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary,
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-            if (!isLast) {
-                Box(
-                    Modifier
-                        .width(2.dp)
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(14.dp)
+            )
         }
 
         Surface(
+            onClick = onClick,
             modifier = Modifier
                 .weight(1f)
                 .padding(bottom = 12.dp),
-            shape = AppShape.shapes.cardLarge,
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            onClick = onClick
+            color = MiuixTheme.colorScheme.surfaceContainer,
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            AppShape.shapes.iconSmall
-                        ),
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MiuixTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                        tint = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MiuixTheme.textStyles.subtitle,
+                    color = MiuixTheme.colorScheme.onSurfaceContainer
                 )
             }
         }
@@ -1019,22 +975,22 @@ internal class StarterViewModel(
     private fun initializeSteps() {
         _steps.value = if (isRoot) {
             listOf(
-                StepData(context.getString(R.string.check_root_permission), Icons.Filled.Security, StepStatus.PENDING, context.getString(R.string.waiting_check)),
-                StepData(context.getString(R.string.check_existing_service), Icons.Filled.Search, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.start_service_process), Icons.Filled.RocketLaunch, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.wait_binder_response), Icons.Filled.Sync, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.start_complete), Icons.Filled.CheckCircle, StepStatus.PENDING, context.getString(R.string.waiting_complete))
+                StepData(context.getString(R.string.check_root_permission), MiuixIcons.Unlock, StepStatus.PENDING, context.getString(R.string.waiting_check)),
+                StepData(context.getString(R.string.check_existing_service), MiuixIcons.Search, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.start_service_process), MiuixIcons.Play, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.wait_binder_response), MiuixIcons.Refresh, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.start_complete), MiuixIcons.Ok, StepStatus.PENDING, context.getString(R.string.waiting_complete))
             )
         } else {
             listOf(
-                StepData(context.getString(R.string.detect_adb_port), Icons.Filled.Wifi, StepStatus.PENDING, context.getString(R.string.waiting_detect)),
-                StepData(context.getString(R.string.detect_pairing_status), Icons.Filled.VpnKey, StepStatus.PENDING, context.getString(R.string.waiting_detect)),
-                StepData(context.getString(R.string.connect_adb_service), Icons.Filled.Cable, StepStatus.PENDING, context.getString(R.string.waiting_connect)),
-                StepData(context.getString(R.string.verify_connection), Icons.Filled.VerifiedUser, StepStatus.PENDING, context.getString(R.string.waiting_verify)),
-                StepData(context.getString(R.string.check_existing_service), Icons.Filled.Search, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.start_service_process), Icons.Filled.RocketLaunch, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.wait_binder_response), Icons.Filled.Sync, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
-                StepData(context.getString(R.string.start_complete), Icons.Filled.CheckCircle, StepStatus.PENDING, context.getString(R.string.waiting_complete))
+                StepData(context.getString(R.string.detect_adb_port), MiuixIcons.Link, StepStatus.PENDING, context.getString(R.string.waiting_detect)),
+                StepData(context.getString(R.string.detect_pairing_status), MiuixIcons.Lock, StepStatus.PENDING, context.getString(R.string.waiting_detect)),
+                StepData(context.getString(R.string.connect_adb_service), MiuixIcons.Link, StepStatus.PENDING, context.getString(R.string.waiting_connect)),
+                StepData(context.getString(R.string.verify_connection), MiuixIcons.Ok, StepStatus.PENDING, context.getString(R.string.waiting_verify)),
+                StepData(context.getString(R.string.check_existing_service), MiuixIcons.Search, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.start_service_process), MiuixIcons.Play, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.wait_binder_response), MiuixIcons.Refresh, StepStatus.PENDING, context.getString(R.string.waiting_execute)),
+                StepData(context.getString(R.string.start_complete), MiuixIcons.Ok, StepStatus.PENDING, context.getString(R.string.waiting_complete))
             )
         }
     }
@@ -1324,7 +1280,7 @@ internal class StarterViewModel(
         pairingPhase = PairingPhase.ENABLE_WIRELESS
         insertStep(0, StepData(
             title = context.getString(R.string.enable_wireless_debugging),
-            icon = Icons.Filled.WifiOff,
+            icon = MiuixIcons.Blocklist,
             status = StepStatus.RUNNING,
             description = context.getString(R.string.enable_wireless_debugging_hint),
             needsUserAction = true
@@ -1338,7 +1294,7 @@ internal class StarterViewModel(
 
         insertStep(1, StepData(
             title = context.getString(R.string.grant_notification_permission),
-            icon = Icons.Filled.Notifications,
+            icon = MiuixIcons.Info,
             status = if (hasPermission) StepStatus.COMPLETED else StepStatus.RUNNING,
             description = if (hasPermission) context.getString(R.string.notification_permission_granted) else context.getString(R.string.notification_permission_required),
             needsUserAction = !hasPermission
@@ -1346,7 +1302,7 @@ internal class StarterViewModel(
 
         insertStep(2, StepData(
             title = context.getString(R.string.wireless_debugging_pairing),
-            icon = Icons.Filled.QrCode,
+            icon = MiuixIcons.Scan,
             status = if (hasPermission) StepStatus.RUNNING else StepStatus.PENDING,
             description = context.getString(R.string.pairing_instruction),
             needsUserAction = hasPermission

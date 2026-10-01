@@ -1,11 +1,9 @@
 package roro.stellar.manager.ui.navigation.routes
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.ui.graphics.vector.ImageVector
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Lock
+import top.yukonga.miuix.kmp.icon.extended.Play
 import roro.stellar.manager.R
 
 /**
@@ -17,20 +15,17 @@ import roro.stellar.manager.R
 enum class MainScreen(
     val route: String,
     val labelRes: Int,
-    val icon: ImageVector,
-    val iconFilled: ImageVector
+    val icon: ImageVector
 ) {
     Home(
         route = "home_graph",
         labelRes = R.string.nav_home,
-        icon = Icons.Outlined.PlayArrow,
-        iconFilled = Icons.Filled.PlayArrow
+        icon = MiuixIcons.Play
     ),
 
     PasswordSwitch(
         route = "password_switch_graph",
         labelRes = R.string.nav_password_switch,
-        icon = Icons.Outlined.Key,
-        iconFilled = Icons.Filled.Key
+        icon = MiuixIcons.Lock
     )
 }

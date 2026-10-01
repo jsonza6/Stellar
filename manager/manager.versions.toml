@@ -13,7 +13,7 @@ libcxx = "27.0.12077973"
 boringssl = "20250114"
 hiddenApiBypass = "6.1"
 bcpkix = "1.80"
-capsule = "2.1.0"
+miuix = "0.9.1"
 
 [libraries]
 kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
@@ -30,10 +30,8 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 
 composeBom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 composeUi = { module = "androidx.compose.ui:ui" }
-composeUiToolingPreview = { module = "androidx.compose.ui:ui-tooling-preview" }
 composeMaterial3 = { module = "androidx.compose.material3:material3" }
 activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
-composeMaterialIconsExtended = { module = "androidx.compose.material:material-icons-extended" }
 composeRuntimeLivedata = { module = "androidx.compose.runtime:runtime-livedata" }
 composeUiGraphics = { module = "androidx.compose.ui:ui-graphics" }
 navigationCompose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
@@ -44,11 +42,20 @@ libcxx = { module = "org.lsposed.libcxx:libcxx", version.ref = "libcxx" }
 boringssl = { module = "io.github.vvb2060.ndk:boringssl", version.ref = "boringssl" }
 hiddenApiBypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenApiBypass" }
 bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bcpkix" }
-capsule = { module = "com.github.Kyant0:Capsule", version.ref = "capsule" }
+
+# Miuix (HyperOS / MIUI design language) — Compose Multiplatform component library.
+# 0.9.1 is the newest release that still works with AGP 8.13.2 (it depends on
+# Compose 1.11.0, whose AAR metadata requires AGP 8.6.0+; 0.9.4 needs Compose 1.12.0
+# which requires AGP 9.1.0). Its Kotlin metadata is 2.3.0, so the Kotlin toolchain
+# must be >= 2.3.x.
+miuixUi = { module = "top.yukonga.miuix.kmp:miuix-ui-android", version.ref = "miuix" }
+miuixPreference = { module = "top.yukonga.miuix.kmp:miuix-preference-android", version.ref = "miuix" }
+miuixIcons = { module = "top.yukonga.miuix.kmp:miuix-icons-android", version.ref = "miuix" }
 
 [bundles]
 kotlinxCoroutines = ["kotlinxCoroutinesCore", "kotlinxCoroutinesAndroid"]
 core = ["appcompat", "coreKtx", "coreSplashscreen"]
 lifecycle = ["lifecycleViewmodelKtx", "lifecycleLivedataKtx", "lifecycleViewmodelCompose"]
-composeUi = ["composeUi", "composeUiToolingPreview", "composeMaterial3", "activityCompose", "composeMaterialIconsExtended", "composeRuntimeLivedata", "composeUiGraphics", "navigationCompose"]
+composeUi = ["composeUi", "composeMaterial3", "activityCompose", "composeRuntimeLivedata", "composeUiGraphics", "navigationCompose"]
 nativeCrypto = ["libcxx", "boringssl", "hiddenApiBypass", "bcpkix"]
+miuix = ["miuixUi", "miuixPreference", "miuixIcons"]

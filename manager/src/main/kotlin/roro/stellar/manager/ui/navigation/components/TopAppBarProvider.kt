@@ -1,13 +1,16 @@
 package roro.stellar.manager.ui.navigation.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
 
-@OptIn(ExperimentalMaterial3Api::class)
-val LocalTopAppBarState = compositionLocalOf<TopAppBarState?> { null }
+/**
+ * 顶栏滚动行为。由 [TopAppBarProvider] 统一创建，页面通过
+ * `Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)` 与顶栏联动。
+ */
+val LocalTopAppBarScrollBehavior = compositionLocalOf<ScrollBehavior?> { null }
 
 data class NavigationState(
     val selectedIndex: Int,
@@ -16,15 +19,14 @@ data class NavigationState(
 
 val LocalNavigationState = compositionLocalOf<NavigationState?> { null }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBarProvider(
     content: @Composable () -> Unit
 ) {
-    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = MiuixScrollBehavior()
 
     CompositionLocalProvider(
-        LocalTopAppBarState provides topAppBarState
+        LocalTopAppBarScrollBehavior provides scrollBehavior
     ) {
         content()
     }

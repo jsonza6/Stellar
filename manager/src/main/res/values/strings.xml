@@ -4,8 +4,6 @@
 
     <!-- Navigation -->
     <string name="nav_home">Start</string>
-    <string name="nav_apps">Apps</string>
-    <string name="nav_terminal">Terminal</string>
     <string name="nav_password_switch">Passwords</string>
     <string name="password_switch_title">Password manager switch</string>
 
@@ -25,14 +23,12 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
 
     <!-- Theme -->
-    <string name="theme_light">Light</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_auto">Auto</string>
 
     <!-- Home Screen -->
     <string name="service_status">Service Status</string>
     <string name="service_running">Running</string>
     <string name="service_not_running">Not Running</string>
+    <string name="home_start_section">Start the service</string>
     <string name="version">Version</string>
     <string name="run_mode">Mode</string>
     <string name="root_restart">Root Restart</string>
@@ -60,6 +56,7 @@
     <string name="feature_runtime_permission_manage">Permission grant/revoke</string>
     <string name="feature_secure_settings_write">Secure settings write</string>
     <string name="view">View</string>
+    <string name="action_refresh">Refresh</string>
     <string name="stop_service">Stop Service</string>
     <string name="stop_service_message">Stellar service will be stopped.</string>
     <string name="view_command">View Command</string>

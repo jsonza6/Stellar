@@ -2,54 +2,59 @@ package roro.stellar.manager.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import roro.stellar.manager.compat.BuildUtils.atLeast31
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
-private val LightColorScheme = lightColorScheme()
-private val DarkColorScheme = darkColorScheme()
-
+/**
+ * 应用根主题。
+ *
+ * 使用 Miuix（HyperOS / MIUI 设计语言）作为唯一的主题与组件来源。整体界面风格参考
+ * SukiSU 管理器：底部导航 + 分组卡片 + 状态标签。
+ *
+ * [ThemeMode] 映射到 Miuix 的 [ColorSchemeMode]：开启动态取色时使用 Monet 变体
+ * （Android 12+ 取系统壁纸色），否则回退到 Miuix 内置的浅色/深色配色。
+ */
 @Composable
 fun StellarTheme(
     themeMode: ThemeMode = ThemePreferences.themeMode.value,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val systemInDarkTheme = isSystemInDarkTheme()
     val darkTheme = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
-        ThemeMode.AUTO -> systemInDarkTheme
+        ThemeMode.AUTO -> isSystemInDarkTheme()
     }
-    
-    val colorScheme = when {
-        dynamicColor && atLeast31 -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+
+    val controller = remember(themeMode, dynamicColor) {
+        ThemeController(
+            colorSchemeMode = when (themeMode) {
+                ThemeMode.LIGHT ->
+                    if (dynamicColor) ColorSchemeMode.MonetLight else ColorSchemeMode.Light
+
+                ThemeMode.DARK ->
+                    if (dynamicColor) ColorSchemeMode.MonetDark else ColorSchemeMode.Dark
+
+                ThemeMode.AUTO ->
+                    if (dynamicColor) ColorSchemeMode.MonetSystem else ColorSchemeMode.System
+            }
+        )
     }
-    
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            // 边到边模式下状态栏背景由 enableEdgeToEdge 处理，这里只同步图标明暗。
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+    MiuixTheme(controller = controller, content = content)
 }

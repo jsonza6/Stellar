@@ -174,5 +174,6 @@ dependencies {
 
     implementation managerLibs.bundles.nativeCrypto
 
-    implementation managerLibs.capsule
+    // Miuix (HyperOS / MIUI) design system
+    implementation managerLibs.bundles.miuix
 }

@@ -12,18 +12,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,7 +36,7 @@ import roro.stellar.manager.ui.features.home.HomeViewModel
 import roro.stellar.manager.ui.features.manager.ManagerActivity
 import roro.stellar.manager.ui.features.passwordswitch.PasswordSwitchScreen
 import roro.stellar.manager.ui.navigation.components.LocalNavigationState
-import roro.stellar.manager.ui.navigation.components.LocalTopAppBarState
+import roro.stellar.manager.ui.navigation.components.LocalTopAppBarScrollBehavior
 import roro.stellar.manager.ui.navigation.components.NavigationState
 import roro.stellar.manager.ui.navigation.components.StandardBottomNavigation
 import roro.stellar.manager.ui.navigation.components.StandardNavigationRail
@@ -51,9 +46,14 @@ import roro.stellar.manager.ui.navigation.safePopBackStack
 import roro.stellar.manager.ui.theme.StellarTheme
 import roro.stellar.manager.ui.theme.ThemePreferences
 import roro.stellar.manager.util.BackgroundVisibilityUtils
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
  * 单一用途管理器：启动特权服务，并驱动密码管理器切换。
+ *
+ * 界面采用 Miuix（HyperOS / MIUI）设计语言，整体结构参考 SukiSU 管理器：
+ * 竖屏底部导航 / 横屏侧边导航 + 分组卡片。
  *
  * 本分支不提供客户端授权，因此不再处理来自第三方应用的 referrer，也不再拉起授权界面。
  */
@@ -112,16 +112,15 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenContent(
     homeViewModel: HomeViewModel
 ) {
-    val topAppBarState = LocalTopAppBarState.current!!
+    val scrollBehavior = LocalTopAppBarScrollBehavior.current!!
     val navController = rememberNavController()
 
     // 固定起始页：MainScreen 只暴露 Home 与 PasswordSwitch 两个页面。
-    var selectedIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
     val context = navController.context
@@ -177,7 +176,7 @@ private fun MainScreenContent(
             ) {
                 composable("home") {
                     HomeScreen(
-                        topAppBarState = topAppBarState,
+                        scrollBehavior = scrollBehavior,
                         homeViewModel = homeViewModel,
                         onNavigateToStarter = { isRoot, host, port, hasSecureSettings ->
                             context.startActivity(ManagerActivity.createStarterIntent(context, isRoot, host, port, hasSecureSettings))
@@ -192,7 +191,7 @@ private fun MainScreenContent(
             ) {
                 composable("password_switch") {
                     PasswordSwitchScreen(
-                        topAppBarState = topAppBarState
+                        scrollBehavior = scrollBehavior
                     )
                 }
             }
@@ -202,33 +201,35 @@ private fun MainScreenContent(
     CompositionLocalProvider(LocalNavigationState provides navigationState) {
         AdaptiveLayoutProvider {
             if (isLandscape) {
-                Row(modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MiuixTheme.colorScheme.surface)
                 ) {
                     StandardNavigationRail(
                         selectedIndex = selectedIndex,
                         onItemClick = onNavigationItemClick
                     )
-                    navHostContent(Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface)
+                    navHostContent(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxSize()
                     )
                 }
             } else {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Scaffold(
-                        bottomBar = {
-                            StandardBottomNavigation(
-                                selectedIndex = selectedIndex,
-                                onItemClick = onNavigationItemClick
-                            )
-                        },
-                        contentWindowInsets = WindowInsets.navigationBars
-                    ) {
-                        navHostContent(Modifier.fillMaxSize().padding(it))
+                Scaffold(
+                    bottomBar = {
+                        StandardBottomNavigation(
+                            selectedIndex = selectedIndex,
+                            onItemClick = onNavigationItemClick
+                        )
                     }
+                ) { padding ->
+                    navHostContent(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    )
                 }
             }
         }

@@ -1,33 +1,29 @@
 package roro.stellar.manager.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import roro.stellar.manager.R
-import roro.stellar.manager.ui.theme.AppShape
-import roro.stellar.manager.ui.theme.AppSpacing
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.window.WindowDialog
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Miuix 风格的确认对话框。
+ *
+ * 使用 [WindowDialog]（独立窗口层）而不是 Overlay 变体，这样在任何页面层级都能弹出，
+ * 不要求调用方处于 `Scaffold` 的 popup host 之下。
+ */
 @Composable
 fun StellarDialog(
     onDismissRequest: () -> Unit,
@@ -41,62 +37,38 @@ fun StellarDialog(
     leadingAction: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    BasicAlertDialog(
-        onDismissRequest = onDismissRequest
+    WindowDialog(
+        show = true,
+        title = title,
+        onDismissRequest = onDismissRequest,
     ) {
-        Surface(
-            shape = AppShape.shapes.dialog,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(AppSpacing.dialogPadding)
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            content()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(AppSpacing.sectionSpacing))
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    content()
+                leadingAction?.invoke(this)
+                Spacer(Modifier.weight(1f))
+                if (showDismissButton) {
+                    TextButton(
+                        text = dismissText,
+                        onClick = onDismiss
+                    )
+                    Spacer(Modifier.width(8.dp))
                 }
-
-                Spacer(modifier = Modifier.height(AppSpacing.dialogPadding))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                Button(
+                    onClick = onConfirm,
+                    enabled = confirmEnabled
                 ) {
-                    leadingAction?.invoke(this)
-                    Spacer(modifier = Modifier.weight(1f))
-                    if (showDismissButton) {
-                        TextButton(onClick = onDismiss) {
-                            Text(dismissText)
-                        }
-                        Spacer(modifier = Modifier.width(AppSpacing.dialogButtonSpacing))
-                    }
-                    Button(
-                        onClick = onConfirm,
-                        enabled = confirmEnabled,
-                        shape = AppShape.shapes.buttonMedium
-                    ) {
-                        Text(confirmText)
-                    }
+                    Text(confirmText)
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StellarInfoDialog(
     onDismissRequest: () -> Unit,
@@ -112,10 +84,6 @@ fun StellarInfoDialog(
         onConfirm = onConfirm,
         showDismissButton = false
     ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(message)
     }
 }

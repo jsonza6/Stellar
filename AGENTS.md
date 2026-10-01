@@ -51,7 +51,9 @@ api/         → 客户端 SDK 子模块（独立仓库 Stellar-API，勿在父�
 
 ### Manager 应用架构
 
-- UI：Jetpack Compose + Material Design 3，导航在 `ui/navigation/`
+- UI：**Miuix（HyperOS / MIUI 设计语言）**，整体结构参考 SukiSU 管理器：竖屏底部导航 /
+  横屏侧边导航 + 分组卡片 + 状态标签。根主题在 `ui/theme/Theme.kt`（`MiuixTheme` +
+  `ThemeController`），导航在 `ui/navigation/`
 - 页面：仅 `Home`、`PasswordSwitch`（见 `ui/navigation/routes/NavigationRoutes.kt` 的 `MainScreen`）
 - 二级页：`ui/features/manager/ManagerActivity`（仅 Starter 路由，Root/ADB 启动器）
 - ADB 无线配对：`adb/` 包实现完整 ADB 协议栈（配对、mDNS 发现、连接）
@@ -59,6 +61,11 @@ api/         → 客户端 SDK 子模块（独立仓库 Stellar-API，勿在父�
 - 密码切换：`passwordswitch/`（`PasswordSwitchService`、`Settings.kt` 的事务实现、`ShellCommandRunner`、`ProviderCatalog`）
 - JNI：`src/main/jni/` 含 starter、chid、adb_pairing、rish 等 native 组件
 - 多语言：仅英文（默认）+ 简体中文（`values-zh-rCN`）
+
+> **UI 约定**：不要再引入 Material 3 组件或 Material 图标。图标统一用
+> `MiuixIcons.*`（`top.yukonga.miuix.kmp.icon.extended`），颜色/字体统一走
+> `MiuixTheme.colorScheme` / `MiuixTheme.textStyles`。对话框用 `ui/components/StellarDialog.kt`
+> （内部是 Miuix `WindowDialog`）。
 
 ### Server 核心组件
 
@@ -80,10 +87,15 @@ api/         → 客户端 SDK 子模块（独立仓库 Stellar-API，勿在父�
 ## 技术栈
 
 - compileSdk 37, minSdk 24, targetSdk 37, JVM 21
-- AGP 8.13.2, Kotlin 2.2.0, Compose Compiler 2.1.21
+- AGP 8.13.2, **Kotlin 2.3.21**, Compose Compiler 2.3.21
+- **Miuix 0.9.1**（`top.yukonga.miuix.kmp:miuix-ui-android` / `-preference` / `-icons`）
 - Compose BOM 2026.01.01, Navigation Compose 2.9.7
 - NDK 29 + CMake 3.22.1+（JNI 组件）
 - 版本目录：各模块独立 `*.versions.toml`（manager/server/api），根目录 `gradle/libs.versions.toml` 管理 hidden-api/refine
+
+> **版本约束（改 Miuix 前必读）**：Miuix 0.9.1 依赖 Compose 1.11.0（AAR 元数据要求 AGP ≥ 8.6.0），
+> Kotlin 元数据版本 2.3.0，因此工具链需 Kotlin ≥ 2.3。**不要**升到 Miuix 0.9.4 —— 它依赖
+> Compose 1.12.0，会要求 AGP 9.1.0 并连带升级 Gradle。
 
 ## 版本号规则
 

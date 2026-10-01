@@ -3,8 +3,6 @@
     <string name="app_name" translatable="false">Stellar</string>
     <!-- Navigation -->
     <string name="nav_home">启动</string>
-    <string name="nav_apps">授权应用</string>
-    <string name="nav_terminal">命令</string>
     <string name="nav_password_switch">密码切换</string>
     <string name="password_switch_title">密码管理器切换</string>
 
@@ -24,14 +22,12 @@
     <string name="copied_to_clipboard">已复制到剪贴板</string>
 
     <!-- Theme -->
-    <string name="theme_light">浅色</string>
-    <string name="theme_dark">深色</string>
-    <string name="theme_auto">跟随系统</string>
 
     <!-- Home Screen -->
     <string name="service_status">服务状态</string>
     <string name="service_running">正在运行</string>
     <string name="service_not_running">未运行</string>
+    <string name="home_start_section">启动服务</string>
     <string name="version">版本</string>
     <string name="run_mode">运行模式</string>
     <string name="root_restart">Root 重启</string>
@@ -59,6 +55,7 @@
     <string name="feature_runtime_permission_manage">权限授予/撤销</string>
     <string name="feature_secure_settings_write">安全设置写入</string>
     <string name="view">查看</string>
+    <string name="action_refresh">刷新</string>
     <string name="stop_service">停止服务</string>
     <string name="stop_service_message">Stellar 服务将被停止。</string>
     <string name="view_command">查看指令</string>
