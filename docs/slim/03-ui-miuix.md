@@ -55,17 +55,62 @@ Miuix 是 Compose Multiplatform 库，对工具链有硬性要求，形成一条
 - 移除：`capsule`（Kyant0，被 Miuix squircle 取代）、`material-icons-extended`、`ui-tooling-preview`
 - `settings.gradle` 的 jitpack `includeGroup("com.github.Kyant0")` 一并移除
 
-### 3.2 主题
+### 3.2 主题（含一次返工）
 
-`ui/theme/Theme.kt`：
+**第一版走错了**：沿用了旧的 `dynamicColor = true`，映射到 `ColorSchemeMode.Monet*`，
+取的是**系统 Material You 壁纸色**——组件虽然是 Miuix 的，配色却还是 MD3，
+所以第一版"看起来还是 MD3"。已改为直接用 Miuix 自带调色板：
 
 ```kotlin
 ThemeController(colorSchemeMode = when (themeMode) {
-    LIGHT -> if (dynamicColor) MonetLight else Light
-    DARK  -> if (dynamicColor) MonetDark  else Dark
-    AUTO  -> if (dynamicColor) MonetSystem else System
+    LIGHT -> ColorSchemeMode.Light
+    DARK  -> ColorSchemeMode.Dark
+    AUTO  -> ColorSchemeMode.System
 })
 ```
+
+Miuix 自带调色板（来自 Miuix `Colors.kt`）：
+
+| 角色 | 浅色 | 深色 |
+|---|---|---|
+| 页面底色 `surface` | `#F7F7F7` | `#000000` |
+| 卡片 `surfaceContainer` | `#FFFFFF` | `#242424` |
+| 主色 `primary` | `#3482FF`（HyperOS 蓝） | `#277AF7` |
+| 提示容器 `tertiaryContainer` | `#EAF2FF` | `#2B3B54` |
+| 饱和填充 `primaryContainer` | `#5D9BFF` | `#338FE4` |
+
+**同时清掉全部 MD3 泄漏点**：
+
+- `themes.xml` 不再继承 `Theme.Material3.DayNight.NoActionBar`，改为
+  `android:Theme.Material.Light.NoActionBar`（night 用 `android:Theme.Material.NoActionBar`）
+- 新增 `values/colors.xml` + `values-night/colors.xml` 的 `app_window_background`
+  （浅色 `#F7F7F7` / 深色 `#000000`），替换启动图原来的 M3 底色 `#FEF7FF` / `#1C1B1F`
+- 删除 `StellarApplication` 里的 `AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_NO)`
+  （对 `ComponentActivity` 是空操作，且与深色模式冲突）
+- 移除依赖：`com.google.android.material`、`androidx.appcompat`、`androidx.compose.material3`
+
+**语义色用法修正**（第一版用错，会显得不像 Miuix）：
+
+| 位置 | 错误用法 | 修正 |
+|---|---|---|
+| 服务状态卡 | `primaryContainer` 当大卡片底（Miuix 里它是饱和填充蓝 `#5D9BFF`，过重） | 运行中 `tertiaryContainer`；未运行 `surfaceContainer` |
+| 入口卡片图标底座 | `primary` 蓝图标 + `primaryContainer` 饱和蓝底（几乎看不见） | `onPrimaryContainer`（白）图标 + `primaryContainer` 底 = HyperOS 蓝色圆角方块 |
+| 时间线 WARNING | `secondary`（浅色 `#E6E6E6`，几乎不可见） | 新增应用自定义 `StellarColors` 琥珀色 |
+| 时间线运行中圆点 | 圆点是主色，`CircularProgressIndicator` 默认前景色也是 `primary`（蓝底蓝圈） | 前景改 `onPrimary` + 30% 轨道 |
+
+Miuix 调色板没有 warning（琥珀）语义色，而启动流程会用 `WARNING` 表达
+「端口未检测到 / 需要配对」，因此新增 `ui/theme/SemanticColors.kt`：
+
+```kotlin
+object StellarColors {
+    // 浅色 #FFF3E0 / #7A4F00 / #E08A00；深色 #33270D / #F5C77E / #F0B354
+    val warningContainer: Color
+    val onWarningContainer: Color
+    val warningAccent: Color
+}
+```
+
+深浅判定取当前 Miuix 主题背景的 `luminance()`，这样 `ThemeMode` 覆盖系统深色时也正确。
 
 保留 `ThemeMode`（浅色/深色/跟随系统）与状态栏图标明暗同步；顺带移除了已废弃的
 `window.statusBarColor` 写法（边到边模式由 `enableEdgeToEdge` 处理）。
