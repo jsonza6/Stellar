@@ -1,24 +1,19 @@
 package roro.stellar.server
 
-import com.google.gson.annotations.SerializedName
-
+/**
+ * 进程内配置容器：记录声明了 Stellar 支持的 uid 及其权限标记。
+ *
+ * 本分支已移除 Shizuku 兼容、无障碍自启与进程守护开关，也不再做持久化同步，
+ * 因此这里只保留 Binder 分发与鉴权所需的最小字段。
+ */
 class StellarConfig {
 
-    @SerializedName("version")
     var version: Int = LATEST_VERSION
-    @SerializedName("packages")
+
     var packages: MutableMap<Int, PackageEntry> = mutableMapOf()
-    @SerializedName("shizukuCompatEnabled")
-    var shizukuCompatEnabled: Boolean = true
-    @SerializedName("accessibilityAutoStart")
-    var accessibilityAutoStart: Boolean = false
-    @SerializedName("daemonEnabled")
-    var daemonEnabled: Boolean = false
 
     class PackageEntry {
-        @SerializedName("packages")
         var packages: MutableList<String> = ArrayList()
-        @SerializedName("permissions")
         var permissions: MutableMap<String, Int> = mutableMapOf()
     }
 

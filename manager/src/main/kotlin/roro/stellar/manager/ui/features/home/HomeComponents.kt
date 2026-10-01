@@ -434,7 +434,6 @@ private fun RestrictedFeatureChildRow(
 }
 
 private fun RestrictedFeature.titleRes(): Int = when (this) {
-    RestrictedFeature.TERMINAL_COMMAND -> R.string.feature_terminal_command
     RestrictedFeature.SHELL_ID_COMMAND -> R.string.feature_shell_id_command
     RestrictedFeature.PROPERTY_READ_COMMAND -> R.string.feature_property_read_command
     RestrictedFeature.SETTINGS_READ_COMMAND -> R.string.feature_settings_read_command
@@ -446,7 +445,6 @@ private fun RestrictedFeature.titleRes(): Int = when (this) {
     RestrictedFeature.APPOPS_MANAGE -> R.string.feature_appops_manage
     RestrictedFeature.RUNTIME_PERMISSION_MANAGE -> R.string.feature_runtime_permission_manage
     RestrictedFeature.SECURE_SETTINGS_WRITE -> R.string.feature_secure_settings_write
-    RestrictedFeature.BOOT_ADB_START -> R.string.feature_boot_adb_start
 }
 
 @Composable

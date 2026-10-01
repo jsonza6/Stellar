@@ -3,7 +3,6 @@ package roro.stellar.server
 import android.os.IBinder.DeathRecipient
 import android.os.RemoteException
 import com.stellar.server.IStellarApplication
-import moe.shizuku.server.IShizukuApplication
 import roro.stellar.StellarApiConstants.PERMISSION_STELLAR
 import roro.stellar.server.util.Logger
 import java.util.concurrent.ConcurrentHashMap
@@ -30,42 +29,6 @@ open class ClientManager(
     private fun removeFromMaps(record: ClientRecord) {
         clientsByKey.remove(makeKey(record.uid, record.pid))
         clientsByUid[record.uid]?.remove(record)
-    }
-
-    fun getOrCreateClient(uid: Int, pid: Int, packageName: String, apiVersion: Int = 0): ClientRecord {
-        findClient(uid, pid)?.let { return it }
-
-        val record = ClientRecord(uid, pid, null, packageName, apiVersion)
-
-        configManager.find(uid)?.let { entry ->
-            for (permission in entry.permissions) {
-                record.allowedMap[permission.key] = permission.value == ConfigManager.FLAG_GRANTED
-            }
-        }
-
-        addToMaps(record)
-        LOGGER.i("创建 Shizuku 客户端记录: uid=%d, pid=%d, package=%s", uid, pid, packageName)
-        return record
-    }
-
-    fun attachShizukuApplication(uid: Int, pid: Int, application: IShizukuApplication, packageName: String, apiVersion: Int = 0): ClientRecord {
-        val record = getOrCreateClient(uid, pid, packageName, apiVersion)
-        record.shizukuApplication = application
-
-        try {
-            application.asBinder().linkToDeath({
-                LOGGER.i("Shizuku 客户端死亡: uid=%d, pid=%d", uid, pid)
-                record.shizukuApplication = null
-                if (record.client == null) {
-                    removeFromMaps(record)
-                }
-            }, 0)
-        } catch (e: RemoteException) {
-            LOGGER.w(e, "attachShizukuApplication: linkToDeath 失败")
-        }
-
-        LOGGER.i("附加 Shizuku 应用: uid=%d, pid=%d", uid, pid)
-        return record
     }
 
     @JvmOverloads

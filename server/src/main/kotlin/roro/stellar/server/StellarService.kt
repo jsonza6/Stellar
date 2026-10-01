@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Parcel
-import android.os.Parcelable
 import com.stellar.server.IRemoteProcess
 import com.stellar.server.IStellarApplication
 import com.stellar.server.IStellarService
@@ -18,20 +17,21 @@ import roro.stellar.server.communication.CallerContext
 import roro.stellar.server.communication.PermissionEnforcer
 import roro.stellar.server.communication.StellarCommunicationBridge
 import roro.stellar.server.bootstrap.ServerBootstrap
-import roro.stellar.server.ext.FollowStellarStartupExt
 import roro.stellar.server.grant.ManagerGrantHelper
 import roro.stellar.server.ktx.mainHandler
 import roro.stellar.server.monitor.PackageMonitor
-import roro.stellar.server.query.ApplicationQueryHelper
 import roro.stellar.server.service.StellarServiceCore
-import roro.stellar.server.shizuku.ShizukuApiConstants
-import roro.stellar.server.shizuku.ShizukuCallbackFactory
-import roro.stellar.server.shizuku.ShizukuServiceIntercept
 import roro.stellar.server.userservice.UserServiceManager
 import roro.stellar.server.util.Logger
-import roro.stellar.server.daemon.DaemonManager
 import kotlin.system.exitProcess
 
+/**
+ * Stellar 特权服务主体（运行在 ADB / Root 进程内）。
+ *
+ * 本分支只服务单一用途：启动服务获得 shell/root 权限，并驱动密码管理器切换。
+ * Shizuku 兼容层、进程守护、跟随启动与应用查询等能力已移除；AIDL 契约中仍保留的
+ * 相关方法（Shizuku 兼容开关、守护进程开关）作为无害桩存在，以保证与 `:aidl` 一致。
+ */
 class StellarService : IStellarService.Stub() {
 
     private val clientManager: ClientManager
@@ -42,15 +42,6 @@ class StellarService : IStellarService.Stub() {
     private val serviceCore: StellarServiceCore
     internal val permissionEnforcer: PermissionEnforcer
     private val bridge: StellarCommunicationBridge
-
-    internal val shizukuServiceIntercept: ShizukuServiceIntercept
-
-    @Volatile
-    private var daemonPid: Int = -1
-    @Volatile
-    private var daemonRestartCount: Int = 0
-    @Volatile
-    private var lastDaemonRestartTime: Long = 0L
 
     init {
         try {
@@ -84,17 +75,6 @@ class StellarService : IStellarService.Stub() {
             permissionEnforcer = PermissionEnforcer(clientManager, configManager, managerAppId)
             bridge = StellarCommunicationBridge(serviceCore, permissionEnforcer)
 
-            LOGGER.i("初始化 Shizuku 兼容层...")
-            shizukuServiceIntercept = ShizukuServiceIntercept(
-                ShizukuCallbackFactory.create(
-                    clientManager, configManager, userServiceManager,
-                    managerAppId, serviceCore,
-                    shizukuNotifier = { uid, pid, requestCode, allowed ->
-                        shizukuServiceIntercept.notifyPermissionResult(uid, pid, requestCode, allowed)
-                    }
-                )
-            )
-
             LOGGER.i("启动文件监听...")
             ApkChangedObservers.start(ai.sourceDir) {
                 LOGGER.w("检测到管理器应用文件变化，检查应用状态...")
@@ -118,14 +98,6 @@ class StellarService : IStellarService.Stub() {
                     BinderDistributor.sendBinderToManager(this)
                     BinderSender.sendBinderToAuthorizedRunningClients(configManager)
                     ManagerGrantHelper.grantWriteSecureSettings(managerAppId)
-                    if (configManager.isAccessibilityAutoStartEnabled()) {
-                        ManagerGrantHelper.grantAccessibilityService()
-                    }
-                    FollowStellarStartupExt.schedule(this, configManager)
-                    if (configManager.isDaemonEnabled()) {
-                        startDaemon()
-                        LOGGER.i("已启动进程守护")
-                    }
                     notifyClientsServiceStarted()
                     LOGGER.i("Stellar 服务启动完成")
                 } catch (e: Throwable) {
@@ -190,69 +162,16 @@ class StellarService : IStellarService.Stub() {
         data: Bundle?
     ) {
         if (data == null) return
-
-        val permission = data.getString(
-            StellarApiConstants.REQUEST_PERMISSION_REPLY_PERMISSION,
-            StellarApiConstants.PERMISSION_STELLAR
-        )
-        if (permission == ShizukuApiConstants.PERMISSION_NAME) {
-            val allowed = data.getBoolean(StellarApiConstants.REQUEST_PERMISSION_REPLY_ALLOWED, false)
-            val onetime = data.getBoolean(StellarApiConstants.REQUEST_PERMISSION_REPLY_IS_ONETIME, false)
-
-            LOGGER.i("Shizuku 权限结果: uid=$requestUid, pid=$requestPid, code=$requestCode, allowed=$allowed, onetime=$onetime")
-
-            val record = clientManager.findClient(requestUid, requestPid)
-            if (onetime) {
-                if (record != null) {
-                    record.onetimeMap[ShizukuApiConstants.PERMISSION_NAME] = allowed
-                } else {
-                    clientManager.findClients(requestUid).forEach {
-                        it.onetimeMap[ShizukuApiConstants.PERMISSION_NAME] = allowed
-                    }
-                }
-            } else {
-                val newFlag = if (allowed) ConfigManager.FLAG_GRANTED else ConfigManager.FLAG_DENIED
-                configManager.updatePermission(requestUid, ShizukuApiConstants.PERMISSION_NAME, newFlag)
-                clientManager.findClients(requestUid).forEach { it.onetimeMap.remove(ShizukuApiConstants.PERMISSION_NAME) }
-            }
-
-            if (!allowed) {
-                val now = System.currentTimeMillis()
-                if (record != null) {
-                    record.lastDenyTimeMap[ShizukuApiConstants.PERMISSION_NAME] = now
-                } else {
-                    clientManager.findClients(requestUid).forEach {
-                        it.lastDenyTimeMap[ShizukuApiConstants.PERMISSION_NAME] = now
-                    }
-                }
-            }
-
-            shizukuServiceIntercept.notifyPermissionResult(requestUid, requestPid, requestCode, allowed)
-            return
-        }
-
         val caller = CallerContext.fromBinder()
         bridge.handleDispatchPermissionConfirmationResult(caller, requestUid, requestPid, requestCode, data)
     }
 
     override fun getFlagForUid(uid: Int, permission: String): Int {
-        if (permission == ShizukuApiConstants.PERMISSION_NAME) {
-            val stellarFlag = configManager.getPermissionFlag(uid, ShizukuApiConstants.PERMISSION_NAME)
-            return ShizukuApiConstants.stellarToShizukuFlag(stellarFlag)
-        }
-
         val caller = CallerContext.fromBinder()
         return bridge.handleGetFlagForUid(caller, uid, permission)
     }
 
     override fun updateFlagForUid(uid: Int, permission: String, flag: Int) {
-        if (permission == ShizukuApiConstants.PERMISSION_NAME) {
-            val stellarFlag = ShizukuApiConstants.shizukuToStellarFlag(flag)
-            configManager.updatePermission(uid, ShizukuApiConstants.PERMISSION_NAME, stellarFlag)
-            clientManager.findClients(uid).forEach { it.onetimeMap.remove(ShizukuApiConstants.PERMISSION_NAME) }
-            return
-        }
-
         val caller = CallerContext.fromBinder()
         bridge.handleUpdateFlagForUid(caller, uid, permission, flag)
     }
@@ -321,38 +240,28 @@ class StellarService : IStellarService.Stub() {
         bridge.handleClearLogs(caller)
     }
 
-    override fun isShizukuCompatEnabled(): Boolean {
-        val caller = CallerContext.fromBinder()
-        permissionEnforcer.enforceManager(caller, "isShizukuCompatEnabled")
-        return configManager.isShizukuCompatEnabled()
-    }
+    /**
+     * Shizuku 兼容层已移除。为保持与 `:aidl` 契约一致，这里恒返回 false。
+     */
+    override fun isShizukuCompatEnabled(): Boolean = false
 
+    /**
+     * Shizuku 兼容层已移除，忽略设置请求。
+     */
     override fun setShizukuCompatEnabled(enabled: Boolean) {
-        val caller = CallerContext.fromBinder()
-        permissionEnforcer.enforceManager(caller, "setShizukuCompatEnabled")
-        configManager.setShizukuCompatEnabled(enabled)
-        LOGGER.i("Shizuku 兼容层已%s", if (enabled) "启用" else "禁用")
+        LOGGER.w("setShizukuCompatEnabled 已废弃：Shizuku 兼容层已从本分支移除")
     }
 
-    override fun isDaemonEnabled(): Boolean {
-        val caller = CallerContext.fromBinder()
-        permissionEnforcer.enforceManager(caller, "isDaemonEnabled")
-        return configManager.isDaemonEnabled()
-    }
+    /**
+     * 进程守护已移除，恒返回 false。
+     */
+    override fun isDaemonEnabled(): Boolean = false
 
+    /**
+     * 进程守护已移除，忽略设置请求。
+     */
     override fun setDaemonEnabled(enabled: Boolean) {
-        val caller = CallerContext.fromBinder()
-        permissionEnforcer.enforceManager(caller, "setDaemonEnabled")
-        configManager.setDaemonEnabled(enabled)
-
-        if (enabled) {
-            startDaemon()
-        } else {
-            stopDaemon()
-            daemonPid = -1
-        }
-
-        LOGGER.i("进程守护已%s", if (enabled) "启用" else "禁用")
+        LOGGER.w("setDaemonEnabled 已废弃：进程守护已从本分支移除")
     }
 
     override fun getSystemService(name: String?): IBinder? {
@@ -366,17 +275,11 @@ class StellarService : IStellarService.Stub() {
             .invoke(null, name) as? IBinder
     }
 
-    private fun stopDaemon() {
-        DaemonManager.stopDaemon()
-    }
-
     override fun exit() {
         val caller = CallerContext.fromBinder()
         permissionEnforcer.enforceManager(caller, "exit")
         LOGGER.i("exit")
         userServiceManager.cleanupManagerApkCache()
-        daemonPid = -1
-        stopDaemon()
         exitProcess(0)
     }
 
@@ -422,18 +325,8 @@ class StellarService : IStellarService.Stub() {
         }
 
         if (isManager) {
-            if (configManager.isAccessibilityAutoStartEnabled()) {
-                LOGGER.i("管理器已连接，授予无障碍服务权限...")
-                ManagerGrantHelper.grantAccessibilityService()
-            }
             try {
-                application.asBinder().linkToDeath({
-                    LOGGER.i("管理器进程已死亡")
-                    if (configManager.isAccessibilityAutoStartEnabled()) {
-                        LOGGER.i("正在授予无障碍服务权限...")
-                        ManagerGrantHelper.grantAccessibilityService()
-                    }
-                }, 0)
+                application.asBinder().linkToDeath({ LOGGER.i("管理器进程已死亡") }, 0)
             } catch (e: Throwable) {
                 LOGGER.w(e, "监控管理器进程死亡失败")
             }
@@ -475,16 +368,7 @@ class StellarService : IStellarService.Stub() {
     }
 
     override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
-        if (code == ServerConstants.BINDER_TRANSACTION_getApplications) {
-            data.enforceInterface(StellarApiConstants.BINDER_DESCRIPTOR)
-            val userId = data.readInt()
-            val result = ApplicationQueryHelper.getApplications(userId, configManager)
-            reply?.let {
-                it.writeNoException()
-                result.writeToParcel(it, Parcelable.PARCELABLE_WRITE_RETURN_VALUE)
-            }
-            return true
-        } else if (code == StellarApiConstants.BINDER_TRANSACTION_transact) {
+        if (code == StellarApiConstants.BINDER_TRANSACTION_transact) {
             data.enforceInterface(StellarApiConstants.BINDER_DESCRIPTOR)
             transactRemote(data, reply, flags)
             return true
@@ -544,60 +428,6 @@ class StellarService : IStellarService.Stub() {
             } catch (e: Throwable) {
                 LOGGER.w(e, "通知客户端服务启动失败: uid=%d, pid=%d, package=%s", record.uid, record.pid, record.packageName)
             }
-        }
-    }
-
-    private fun startDaemon() {
-        try {
-            val myPid = android.os.Process.myPid()
-            val classpath = System.getProperty("java.class.path") ?: return
-            val startCmd = "CLASSPATH=$classpath app_process /system/bin --nice-name=stellar_server roro.stellar.server.StellarService &"
-            daemonPid = DaemonManager.startDaemon(myPid, startCmd)
-            if (daemonPid > 0) {
-                startDaemonMonitor()
-            }
-        } catch (e: Throwable) {
-            LOGGER.e(e, "启动守护进程失败")
-        }
-    }
-
-    private fun startDaemonMonitor() {
-        Thread {
-            while (configManager.isDaemonEnabled()) {
-                try {
-                    Thread.sleep(5000)
-                    if (daemonPid > 0 && !isProcessAlive(daemonPid)) {
-                        val now = System.currentTimeMillis()
-                        
-                        if (now - lastDaemonRestartTime < 60_000) {
-                            daemonRestartCount++
-                        } else {
-                            daemonRestartCount = 1
-                        }
-                        lastDaemonRestartTime = now
-
-                        if (daemonRestartCount > 5) {
-                            LOGGER.e("守护进程频繁死亡，已停止自动拉起守护进程")
-                            daemonPid = -1
-                            break
-                        }
-
-                        LOGGER.w("检测到守护进程死亡，第 $daemonRestartCount 次尝试重新启动...")
-                        startDaemon()
-                        break
-                    }
-                } catch (e: Exception) {
-                    LOGGER.e(e, "守护进程监控错误")
-                }
-            }
-        }.start()
-    }
-
-    private fun isProcessAlive(pid: Int): Boolean {
-        return try {
-            java.io.File("/proc/$pid").exists()
-        } catch (_: Exception) {
-            false
         }
     }
 

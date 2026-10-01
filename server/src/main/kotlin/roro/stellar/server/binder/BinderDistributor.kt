@@ -10,8 +10,6 @@ import rikka.hidden.compat.ActivityManagerApis
 import rikka.hidden.compat.DeviceIdleControllerApis
 import roro.stellar.server.ServerConstants.MANAGER_APPLICATION_ID
 import roro.stellar.server.api.IContentProviderUtils
-import roro.stellar.server.shizuku.ShizukuApiConstants
-import roro.stellar.server.shizuku.ShizukuServiceIntercept
 import roro.stellar.server.util.Logger
 
 object BinderDistributor {
@@ -62,26 +60,6 @@ object BinderDistributor {
             logPrefix = "",
             retry = retry,
             onRetry = { sendBinderToUserApp(binder, packageName, userId, false) }
-        )
-    }
-
-    fun sendShizukuBinderToUserApp(
-        shizukuIntercept: ShizukuServiceIntercept?,
-        packageName: String?,
-        userId: Int,
-        retry: Boolean = true
-    ): Boolean {
-        if (shizukuIntercept == null || packageName == null) return false
-
-        return sendBinderInternal(
-            packageName = packageName,
-            userId = userId,
-            providerSuffix = ".shizuku",
-            extraKey = ShizukuApiConstants.EXTRA_BINDER,
-            binderContainer = moe.shizuku.api.BinderContainer(shizukuIntercept.asBinder()),
-            logPrefix = "Shizuku ",
-            retry = retry,
-            onRetry = { sendShizukuBinderToUserApp(shizukuIntercept, packageName, userId, false) }
         )
     }
 

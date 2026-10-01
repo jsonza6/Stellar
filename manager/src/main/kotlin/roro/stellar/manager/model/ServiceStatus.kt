@@ -3,7 +3,6 @@ package roro.stellar.manager.model
 import roro.stellar.Stellar
 
 enum class RestrictedFeature {
-    TERMINAL_COMMAND,
     SHELL_ID_COMMAND,
     PROPERTY_READ_COMMAND,
     SETTINGS_READ_COMMAND,
@@ -14,8 +13,7 @@ enum class RestrictedFeature {
     SELINUX_STATUS_COMMAND,
     APPOPS_MANAGE,
     RUNTIME_PERMISSION_MANAGE,
-    SECURE_SETTINGS_WRITE,
-    BOOT_ADB_START
+    SECURE_SETTINGS_WRITE
 }
 
 data class FeatureAvailability(

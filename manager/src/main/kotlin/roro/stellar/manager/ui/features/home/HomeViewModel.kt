@@ -1,7 +1,6 @@
 package roro.stellar.manager.ui.features.home
 
 import android.content.pm.PackageManager
-import roro.stellar.manager.compat.BuildUtils.atLeast30
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -17,8 +16,6 @@ import roro.stellar.manager.model.FeatureAvailability
 import roro.stellar.manager.model.RestrictedFeature
 import roro.stellar.manager.model.ServiceStatus
 import roro.stellar.manager.startup.command.Starter
-import roro.stellar.manager.util.EnvironmentUtils
-import roro.stellar.manager.util.UserHandleCompat
 import java.util.concurrent.TimeUnit
 
 class HomeViewModel : ViewModel() {
@@ -41,7 +38,7 @@ class HomeViewModel : ViewModel() {
         val processListCommand = canExecuteCommand("ps -A -o PID 2>/dev/null | head -n 1")
         val filesystemReadCommand = canExecuteCommand("ls /system/bin")
         val selinuxStatusCommand = canExecuteCommand("getenforce")
-        val commandStates = listOf(
+        val featureStates = listOf(
             FeatureAvailability(RestrictedFeature.SHELL_ID_COMMAND, shellIdCommand),
             FeatureAvailability(RestrictedFeature.PROPERTY_READ_COMMAND, propertyReadCommand),
             FeatureAvailability(RestrictedFeature.SETTINGS_READ_COMMAND, settingsReadCommand),
@@ -50,27 +47,9 @@ class HomeViewModel : ViewModel() {
             FeatureAvailability(RestrictedFeature.PROCESS_LIST_COMMAND, processListCommand),
             FeatureAvailability(RestrictedFeature.FILESYSTEM_READ_COMMAND, filesystemReadCommand),
             FeatureAvailability(RestrictedFeature.SELINUX_STATUS_COMMAND, selinuxStatusCommand),
-            FeatureAvailability(RestrictedFeature.APPOPS_MANAGE, manageAppOps)
-        )
-        val terminalCommand = commandStates.all { it.available }
-        val bootReceiverStart = UserHandleCompat.myUserId() == 0
-        val bootAdbPortDiscovery = atLeast30 ||
-            EnvironmentUtils.getAdbTcpPort() > 0
-        val bootAdbConnectCommand = shellIdCommand && propertyReadCommand
-        val bootAdbStart = writeSecureSettings &&
-            bootReceiverStart &&
-            bootAdbPortDiscovery &&
-            bootAdbConnectCommand &&
-            grantRuntimePermission
-        val featureStates = listOf(
-            FeatureAvailability(
-                RestrictedFeature.TERMINAL_COMMAND,
-                terminalCommand,
-                commandStates.filterNot { it.available }
-            ),
+            FeatureAvailability(RestrictedFeature.APPOPS_MANAGE, manageAppOps),
             FeatureAvailability(RestrictedFeature.RUNTIME_PERMISSION_MANAGE, manageRuntimePermission),
-            FeatureAvailability(RestrictedFeature.SECURE_SETTINGS_WRITE, writeSecureSettings),
-            FeatureAvailability(RestrictedFeature.BOOT_ADB_START, bootAdbStart)
+            FeatureAvailability(RestrictedFeature.SECURE_SETTINGS_WRITE, writeSecureSettings)
         ).filterNot { it.available }
         return ServiceStatus(Stellar.uid, Stellar.version, grantRuntimePermission, featureStates)
     }

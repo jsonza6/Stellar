@@ -1,6 +1,5 @@
 package roro.stellar.manager
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
@@ -36,20 +35,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import roro.stellar.Stellar
-import roro.stellar.StellarApiConstants
-import roro.stellar.manager.authorization.AuthorizationManager
-import roro.stellar.manager.authorization.RequestPermissionActivity
-import roro.stellar.manager.domain.apps.AppType
-import roro.stellar.manager.domain.apps.AppsViewModel
-import roro.stellar.manager.domain.apps.appsViewModel
 import roro.stellar.manager.ui.components.AdaptiveLayoutProvider
-import roro.stellar.manager.ui.features.apps.AppsScreen
 import roro.stellar.manager.ui.features.home.HomeScreen
 import roro.stellar.manager.ui.features.home.HomeViewModel
 import roro.stellar.manager.ui.features.manager.ManagerActivity
 import roro.stellar.manager.ui.features.passwordswitch.PasswordSwitchScreen
-import roro.stellar.manager.ui.features.settings.SettingsScreen
-import roro.stellar.manager.ui.features.terminal.TerminalScreen
 import roro.stellar.manager.ui.navigation.components.LocalNavigationState
 import roro.stellar.manager.ui.navigation.components.LocalTopAppBarState
 import roro.stellar.manager.ui.navigation.components.NavigationState
@@ -60,21 +50,17 @@ import roro.stellar.manager.ui.navigation.routes.MainScreen
 import roro.stellar.manager.ui.navigation.safePopBackStack
 import roro.stellar.manager.ui.theme.StellarTheme
 import roro.stellar.manager.ui.theme.ThemePreferences
-import roro.stellar.manager.ui.theme.StartPage
 import roro.stellar.manager.util.BackgroundVisibilityUtils
 
+/**
+ * 单一用途管理器：启动特权服务，并驱动密码管理器切换。
+ *
+ * 本分支不提供客户端授权，因此不再处理来自第三方应用的 referrer，也不再拉起授权界面。
+ */
 class MainActivity : ComponentActivity() {
-
-    private companion object {
-        const val STATE_SOURCE_PACKAGE = "source_package"
-    }
-
-    private var pendingSourcePackage: String? = null
-    private var sourceAuthorizationStarted = false
 
     private val binderReceivedListener = Stellar.OnBinderReceivedListener {
         checkServerStatus()
-        handlePendingSourceApp()
     }
 
     private val binderDeadListener = Stellar.OnBinderDeadListener {
@@ -87,15 +73,13 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        pendingSourcePackage = savedInstanceState?.getString(STATE_SOURCE_PACKAGE)
-        rememberSourceApp()
         BackgroundVisibilityUtils.setHidden(
             this,
             StellarSettings.getPreferences().getBoolean(StellarSettings.HIDE_BACKGROUND, false)
         )
-        
+
         enableEdgeToEdge()
-        
+
         setContent {
             val themeMode = ThemePreferences.themeMode.value
 
@@ -108,22 +92,8 @@ class MainActivity : ComponentActivity() {
 
         Stellar.addBinderReceivedListenerSticky(binderReceivedListener)
         Stellar.addBinderDeadListener(binderDeadListener)
-        
+
         checkServerStatus()
-
-        handlePendingSourceApp()
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        rememberSourceApp()
-        handlePendingSourceApp()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        pendingSourcePackage?.let { outState.putString(STATE_SOURCE_PACKAGE, it) }
-        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
@@ -133,50 +103,6 @@ class MainActivity : ComponentActivity() {
 
     private fun checkServerStatus() {
         homeModel.reload()
-    }
-
-    private fun rememberSourceApp() {
-        val sourcePackage = referrer?.host?.takeIf {
-            it.isNotBlank() && it != packageName
-        } ?: return
-
-        pendingSourcePackage = sourcePackage
-        sourceAuthorizationStarted = false
-    }
-
-    private fun handlePendingSourceApp() {
-        val sourcePackage = pendingSourcePackage ?: return
-        if (!Stellar.pingBinder() || sourceAuthorizationStarted) return
-
-        val packages = runCatching { AuthorizationManager.getPackages() }.getOrElse { return }
-        val packageInfo = packages.firstOrNull { it.packageName == sourcePackage }
-        if (packageInfo == null) {
-            clearSourceApp()
-            return
-        }
-        val appType = AuthorizationManager.getAppType(packageInfo)
-        val permission =
-            if (appType == AppType.SHIZUKU) "shizuku" else StellarApiConstants.PERMISSION_STELLAR
-        val grantedFlag = if (appType == AppType.SHIZUKU) 2 else AuthorizationManager.FLAG_GRANTED
-        val uid = packageInfo.applicationInfo?.uid ?: run {
-            clearSourceApp()
-            return
-        }
-        val currentFlag = runCatching { Stellar.getFlagForUid(uid, permission) }.getOrElse { return }
-        val isGranted = currentFlag == grantedFlag
-
-        if (isGranted) {
-            clearSourceApp()
-        } else {
-            // 本分支不提供客户端授权：被其他应用拉起时不再弹出授权界面，
-            // 直接清掉 referrer 状态。第三方应用请使用官方 Stellar。
-            clearSourceApp()
-        }
-    }
-
-    private fun clearSourceApp() {
-        pendingSourcePackage = null
-        sourceAuthorizationStarted = false
     }
 
     override fun onDestroy() {
@@ -194,8 +120,7 @@ private fun MainScreenContent(
     val topAppBarState = LocalTopAppBarState.current!!
     val navController = rememberNavController()
 
-    // Fixed start destination: the start-page preference lived in the removed Settings screen,
-    // and MainScreen now exposes only Home and PasswordSwitch.
+    // 固定起始页：MainScreen 只暴露 Home 与 PasswordSwitch 两个页面。
     var selectedIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }

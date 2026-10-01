@@ -1,54 +1,42 @@
 package roro.stellar.server
 
 import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.os.IBinder
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import rikka.hidden.compat.ActivityManagerApis
 import rikka.hidden.compat.PackageManagerApis
 import rikka.hidden.compat.UserManagerApis
 import roro.stellar.StellarApiConstants.PERMISSIONS
 import roro.stellar.StellarApiConstants.PERMISSION_KEY
 import roro.stellar.StellarApiConstants.PERMISSION_STELLAR
 import roro.stellar.server.StellarConfig.PackageEntry
-import roro.stellar.server.api.IContentProviderUtils
-import roro.stellar.server.ktx.workerHandler
-import roro.stellar.server.shizuku.ShizukuApiConstants
 import roro.stellar.server.util.Logger
 import roro.stellar.server.util.PackageManagerCompat
 import roro.stellar.server.util.ProviderDiscovery
 import roro.stellar.server.util.UserHandleCompat
 
+/**
+ * 进程内配置：记录哪些 uid 声明了 Stellar 支持、以及它们各自的权限标记。
+ *
+ * 本分支不再向第三方应用授权，也不再与管理器做配置持久化同步，因此这里只保留内存态，
+ * 供 Binder 分发与调用级鉴权使用。
+ */
 class ConfigManager {
 
-    private val mWriteRunner: Runnable = Runnable { saveToManager(config) }
-
     private val config: StellarConfig
-    private val configLoadedFromManager: Boolean
+
     val packages: MutableMap<Int, PackageEntry>
         get() = LinkedHashMap(config.packages)
 
     init {
-        val loadResult = loadFromManagerWithStatus()
-        this.config = loadResult.first
-        this.configLoadedFromManager = loadResult.second
-
-        var changed = false
+        this.config = StellarConfig()
 
         for (entry in LinkedHashMap(config.packages)) {
-
             val packages = PackageManagerApis.getPackagesForUidNoThrow(entry.key)
             if (packages.isEmpty()) {
                 LOGGER.i("remove config for uid %d since it has gone", entry.key)
                 config.packages.remove(entry.key)
-                changed = true
                 continue
             }
 
             var needRemoving = true
-
             for (packageName in entry.value.packages) {
                 if (packages.contains(packageName)) {
                     needRemoving = false
@@ -68,7 +56,6 @@ class ConfigManager {
             if (needRemoving) {
                 LOGGER.i("remove config for uid %d since the packages for it changed", entry.key)
                 config.packages.remove(entry.key)
-                changed = true
             }
         }
 
@@ -94,12 +81,9 @@ class ConfigManager {
                 }
 
                 val uid = pi.applicationInfo!!.uid
-
                 val packages = ArrayList<String>()
                 packages.add(pi.packageName)
-
                 updateLocked(uid, packages)
-                changed = true
             }
         }
 
@@ -117,17 +101,6 @@ class ConfigManager {
                         permissions.add(permission)
                     }
                 }
-                val packageInfo = PackageManagerCompat.getPackageInfo(
-                    packageName,
-                    (PackageManager.GET_META_DATA or PackageManager.GET_PROVIDERS).toLong(),
-                    UserHandleCompat.getUserId(entry.key)
-                )
-                if (
-                    applicationInfo.metaData?.getBoolean(ShizukuApiConstants.META_DATA_KEY, false) == true ||
-                    packageInfo?.let { ProviderDiscovery.hasShizukuProvider(it) } == true
-                ) {
-                    permissions.add("shizuku")
-                }
             }
             val packageEntry = findLocked(entry.key)!!
             val permissionsToRemove = mutableListOf<String>()
@@ -138,30 +111,13 @@ class ConfigManager {
             }
             for (permissionKey in permissionsToRemove) {
                 packageEntry.permissions.remove(permissionKey)
-                changed = true
             }
             for (permission in permissions) {
                 if (packageEntry.permissions[permission] == null) {
                     packageEntry.permissions[permission] = FLAG_ASK
-                    changed = true
                 }
             }
         }
-
-        if (changed && configLoadedFromManager) {
-            scheduleWriteLocked()
-        }
-    }
-
-    private fun scheduleWriteLocked() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (workerHandler.hasCallbacks(mWriteRunner)) {
-                return
-            }
-        } else {
-            workerHandler.removeCallbacks(mWriteRunner)
-        }
-        workerHandler.postDelayed(mWriteRunner, WRITE_DELAY)
     }
 
     private fun findLocked(uid: Int): PackageEntry? {
@@ -232,7 +188,6 @@ class ConfigManager {
             }
 
             config.packages[uid] = entry
-            scheduleWriteLocked()
 
             LOGGER.i("已创建配置: uid=%d, package=%s, permissions=%s",
                 uid, packageName, entry.permissions.toString())
@@ -257,7 +212,6 @@ class ConfigManager {
                 entry.packages.add(packageName)
             }
         }
-        scheduleWriteLocked()
     }
 
     fun update(
@@ -282,7 +236,6 @@ class ConfigManager {
             LOGGER.i("为 uid=%d 的权限配置补全包名: %s", uid, entry.packages.toString())
         }
         entry.permissions[permission] = newFlag
-        scheduleWriteLocked()
     }
 
     fun updatePermission(uid: Int, permission: String, newFlag: Int) {
@@ -293,53 +246,11 @@ class ConfigManager {
 
     private fun removeLocked(uid: Int) {
         config.packages.remove(uid)
-        scheduleWriteLocked()
     }
 
     fun remove(uid: Int) {
         synchronized(this) {
             removeLocked(uid)
-        }
-    }
-
-    fun isShizukuCompatEnabled(): Boolean {
-        synchronized(this) {
-            return config.shizukuCompatEnabled
-        }
-    }
-
-    fun setShizukuCompatEnabled(enabled: Boolean) {
-        synchronized(this) {
-            if (config.shizukuCompatEnabled != enabled) {
-                config.shizukuCompatEnabled = enabled
-                LOGGER.i("Shizuku 兼容层状态已更改: %s", if (enabled) "启用" else "禁用")
-                scheduleWriteLocked()
-            }
-        }
-    }
-
-    fun isAccessibilityAutoStartEnabled(): Boolean {
-        return try {
-            val freshConfig = loadFromManager()
-            freshConfig.accessibilityAutoStart
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
-    fun isDaemonEnabled(): Boolean {
-        synchronized(this) {
-            return config.daemonEnabled
-        }
-    }
-
-    fun setDaemonEnabled(enabled: Boolean) {
-        synchronized(this) {
-            if (config.daemonEnabled != enabled) {
-                config.daemonEnabled = enabled
-                LOGGER.i("进程守护状态已更改: %s", if (enabled) "启用" else "禁用")
-                scheduleWriteLocked()
-            }
         }
     }
 
@@ -349,70 +260,5 @@ class ConfigManager {
         const val FLAG_ASK: Int = 0
         const val FLAG_GRANTED: Int = 1
         const val FLAG_DENIED: Int = 2
-
-        private val GSON_IN: Gson = GsonBuilder().create()
-        private val GSON_OUT: Gson = GsonBuilder()
-            .setVersion(StellarConfig.LATEST_VERSION.toDouble())
-            .create()
-
-        private const val WRITE_DELAY = 1000L
-        private const val MANAGER_PROVIDER = "${ServerConstants.MANAGER_APPLICATION_ID}.stellar"
-
-        private fun callProvider(method: String, extras: Bundle?): Bundle? {
-            val token: IBinder? = null
-            var provider: android.content.IContentProvider? = null
-            return try {
-                provider = ActivityManagerApis.getContentProviderExternal(MANAGER_PROVIDER, 0, token, MANAGER_PROVIDER)
-                    ?: return null
-                IContentProviderUtils.callCompat(provider, null, MANAGER_PROVIDER, method, null, extras ?: Bundle())
-            } catch (tr: Throwable) {
-                LOGGER.e(tr, "ContentProvider 调用失败: %s", method)
-                null
-            } finally {
-                if (provider != null) {
-                    try { ActivityManagerApis.removeContentProviderExternal(MANAGER_PROVIDER, token) } catch (_: Throwable) {}
-                }
-            }
-        }
-
-        fun loadFromManagerWithStatus(): Pair<StellarConfig, Boolean> {
-            return try {
-                val reply = callProvider("loadConfig", null)
-                if (reply == null) {
-                    LOGGER.w("从 manager 加载配置失败: 返回 null，使用默认值并跳过初始化写入")
-                    return Pair(StellarConfig(), false)
-                }
-                val json = reply.getString("configJson")
-                if (json != null) {
-                    val config = GSON_IN.fromJson(json, StellarConfig::class.java) ?: StellarConfig()
-                    Pair(config, true)
-                } else {
-                    LOGGER.i("manager 无配置，使用默认值")
-                    Pair(StellarConfig(), true)
-                }
-            } catch (tr: Throwable) {
-                LOGGER.w(tr, "从 manager 加载配置失败，使用默认值，跳过初始化写入")
-                Pair(StellarConfig(), false)
-            }
-        }
-
-        fun loadFromManager(): StellarConfig {
-            return loadFromManagerWithStatus().first
-        }
-
-        fun saveToManager(config: StellarConfig) {
-            try {
-                val json = GSON_OUT.toJson(config)
-                val extras = Bundle().apply { putString("configJson", json) }
-                val result = callProvider("saveConfig", extras)
-                if (result != null) {
-                    LOGGER.v("配置已保存到 manager")
-                } else {
-                    LOGGER.w("保存配置到 manager 失败: 返回 null")
-                }
-            } catch (tr: Throwable) {
-                LOGGER.e(tr, "保存配置到 manager 失败")
-            }
-        }
     }
 }

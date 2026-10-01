@@ -16,6 +16,4 @@ object ProviderDiscovery {
     }
 
     fun hasStellarProvider(packageInfo: PackageInfo): Boolean = hasProvider(packageInfo, ".stellar")
-
-    fun hasShizukuProvider(packageInfo: PackageInfo): Boolean = hasProvider(packageInfo, ".shizuku")
 }

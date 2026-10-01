@@ -15,7 +15,6 @@ import roro.stellar.StellarApiConstants.PERMISSION_STELLAR
 import roro.stellar.server.ServerConstants.MANAGER_APPLICATION_ID
 import roro.stellar.server.binder.BinderDistributor
 import roro.stellar.server.ktx.mainHandler
-import roro.stellar.server.shizuku.ShizukuApiConstants
 import roro.stellar.server.util.Logger
 import roro.stellar.server.util.PackageManagerCompat
 import roro.stellar.server.util.ProviderDiscovery
@@ -26,8 +25,6 @@ object BinderSender {
     private val LOGGER = Logger("BinderSender")
     private var stellarService: StellarService? = null
     private var initialManagerUid: Int = -1
-
-    private const val SHIZUKU_MANAGER_PERMISSION = "moe.shizuku.manager.permission.MANAGER"
 
     @Throws(RemoteException::class)
     private fun sendBinder(uid: Int, pid: Int) {
@@ -65,7 +62,6 @@ object BinderSender {
                 }
 
                 val hasStellarProvider = ProviderDiscovery.hasStellarProvider(pi)
-                val hasShizukuProvider = ProviderDiscovery.hasShizukuProvider(pi)
                 val metaData = pi.applicationInfo!!.metaData
                 if (metaData != null) {
                     val permissions = metaData.getString(PERMISSION_KEY, "")
@@ -78,30 +74,7 @@ object BinderSender {
                         continue
                     }
 
-                    val shizukuSupport =
-                        metaData.getBoolean(ShizukuApiConstants.META_DATA_KEY, false) ||
-                            metaData.getString(ShizukuApiConstants.META_DATA_KEY)
-                                ?.equals("true", ignoreCase = true) == true ||
-                            hasShizukuProvider
-
-                    if (shizukuSupport) {
-                        if (pi.requestedPermissions?.contains(SHIZUKU_MANAGER_PERMISSION) == true) {
-                            LOGGER.i("sendBinder：跳过 Shizuku 管理器：%s", packageName)
-                            continue
-                        }
-
-                        LOGGER.i("sendBinder：向应用发送 Shizuku Binder：%s", packageName)
-                        val sent = BinderDistributor.sendShizukuBinderToUserApp(
-                            stellarService?.shizukuServiceIntercept,
-                            packageName,
-                            userId
-                        )
-                        if (sent) return
-                        LOGGER.w("sendBinder：向 %s 发送 Shizuku Binder 失败，继续尝试同 UID 的其他包", packageName)
-                        continue
-                    }
-
-                    LOGGER.d("sendBinder：包 %s 的 meta-data 未声明 Stellar/Shizuku 支持", packageName)
+                    LOGGER.d("sendBinder：包 %s 的 meta-data 未声明 Stellar 支持", packageName)
                 } else {
                     if (hasStellarProvider) {
                         LOGGER.i("sendBinder：通过 Provider 向用户应用发送 Stellar Binder：%s", packageName)
@@ -111,24 +84,7 @@ object BinderSender {
                         continue
                     }
 
-                    if (hasShizukuProvider) {
-                        if (pi.requestedPermissions?.contains(SHIZUKU_MANAGER_PERMISSION) == true) {
-                            LOGGER.i("sendBinder：跳过 Shizuku 管理器：%s", packageName)
-                            continue
-                        }
-
-                        LOGGER.i("sendBinder：通过 Provider 向应用发送 Shizuku Binder：%s", packageName)
-                        val sent = BinderDistributor.sendShizukuBinderToUserApp(
-                            stellarService?.shizukuServiceIntercept,
-                            packageName,
-                            userId
-                        )
-                        if (sent) return
-                        LOGGER.w("sendBinder：向 %s 发送 Shizuku Binder 失败，继续尝试同 UID 的其他包", packageName)
-                        continue
-                    }
-
-                    LOGGER.d("sendBinder：包 %s 没有 meta-data，也未发现兼容 Provider，跳过", packageName)
+                    LOGGER.d("sendBinder：包 %s 没有 meta-data，也未发现 Stellar Provider，跳过", packageName)
                 }
             } catch (t: Throwable) {
                 LOGGER.e(t, "sendBinder：处理包 %s 时异常，继续下一个包", packageName)

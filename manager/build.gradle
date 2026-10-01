@@ -7,7 +7,6 @@ plugins {
     id('com.android.application')
     id('org.jetbrains.kotlin.android')
     id('org.jetbrains.kotlin.plugin.compose')
-    id('com.google.devtools.ksp')
     id('dev.rikka.tools.refine')
     id('dev.rikka.tools.autoresconfig')
 }
@@ -175,17 +174,5 @@ dependencies {
 
     implementation managerLibs.bundles.nativeCrypto
 
-    implementation managerLibs.appiconloader
-
-    implementation managerLibs.okhttp
-
     implementation managerLibs.capsule
-
-    implementation managerLibs.composeMarkdown
-
-    implementation managerLibs.roomRuntime
-    implementation managerLibs.roomKtx
-    ksp managerLibs.roomCompiler
-    implementation managerLibs.gson
-    implementation managerLibs.workRuntimeKtx
 }

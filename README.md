@@ -1,204 +1,74 @@
-<div align="center">
+# Stellar（精简分支）
 
-# Stellar
-一个基于 Shizuku 的深度定制分支，让应用通过 ADB 或 Root 权限使用系统级 API
-
-[![GitHub Stars](https://img.shields.io/github/stars/roro2239/Stellar?style=flat-square&logo=github&logoColor=white&color=181717&cacheSeconds=0)](https://github.com/roro2239/Stellar/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/roro2239/Stellar?style=flat-square&logo=github&logoColor=white&color=181717)](https://github.com/roro2239/Stellar/forks)
-[![GitHub Issues](https://img.shields.io/github/issues/roro2239/Stellar?style=flat-square&logo=github&logoColor=white&color=e74c3c)](https://github.com/roro2239/Stellar/issues)
-[![GitHub Release](https://img.shields.io/github/v/release/roro2239/Stellar?style=flat-square&logo=github&logoColor=white&color=28a745)](https://github.com/roro2239/Stellar/releases)
-
----
-官方交流群组：
-[![QQ群](https://img.shields.io/badge/QQ-1群-12B7F5?style=flat-square&logo=qq&logoColor=white)](https://qm.qq.com/cgi-bin/qm/qr?k=bIpIHQX12Kajh951zELULlF5FN6zeN0y&jump_from=webapi&authKey=Kf6RnfWG1o7whQIi20Uz+X6/dzf/D6/TzED25Pyb0N5td/eVClgysJXgPYnbZhr5)
+> 单一用途工具：**通过 Root 或 ADB 启动特权服务获得 shell 权限，并用该权限切换系统的默认密码管理器**（凭据提供者 / 自动填充服务）。
 
 Language: [English](README_en.md) | 中文
 
-</div>
+---
 
-## 项目简介
+## 这是什么
 
-Stellar 是 [Shizuku](https://github.com/RikkaApps/Shizuku) 的深度定制版本，专为开发者提供更灵活、更强大的特权 API 框架。通过 ADB 无线调试或 Root 权限启动服务后，应用程序可以调用需要系统级权限的 API，而无需应用本身拥有 Root 权限。
+这是一个从 Stellar（Shizuku 的深度定制分支）裁剪而来的**自用精简版本**。它只做两件事：
 
-Tip：我们鼓励贡献者为稳定性高的代码提交 PR，而不是仅将修改保留在自己的 Fork 仓库中。
-## 核心特性
+1. **启动服务，取得 shell / root 权限** —— 两条手动路径：
+   - **Root**：经 `libsu` + `libchid` 降权到 shell 后启动服务。
+   - **ADB 无线调试**：应用内完成配对（mDNS 发现 + 配对 + 连接）后拉起服务。
+2. **用该权限驱动密码管理器切换** —— 读写 `settings secure` 中的
+   `credential_service`、`credential_service_primary`、`autofill_service` 三项，
+   并具备**事务语义**：写前快照比对、逐项写入、读回校验、失败逆序回滚。
 
-Stellar 相比原版 Shizuku 进行了以下核心改进：
+界面只有两个页面：**启动（Home）** 与 **密码切换（PasswordSwitch）**。
 
-### 权限系统增强
+## 构建
 
-- **全新权限架构** - 摒弃单一权限模式，引入精细化的多维度权限管理体系
-- **分级权限控制**：
-  - `stellar` - 核心 API 访问权限，授予基础服务调用能力
-  - `follow_stellar_startup` - 服务伴随启动权限，实现应用与 Stellar 服务的生命周期绑定
-- **智能权限回调** - 增强回调机制，客户端可精准感知授权类型（永久授权/一次性授权）
-- **完整权限管理 API** - 提供全套权限查询、申请、撤销接口，满足复杂业务场景需求
+```bash
+# 构建 debug APK
+./gradlew :manager:assembleDebug
 
-### 启动与服务优化
+# 构建 release APK（需要根目录 signing.properties，缺失时回退 debug 签名）
+./gradlew :manager:assembleRelease
 
-- **开机启动** - 应用可尝试通过开机广播、无障碍权限和 Root 权限实现开机自启，还可预热以便于无网启动
-- **服务伴随启动** - 应用可注册为 Stellar 服务的伴随进程，实现服务启动时自动唤醒
-- **双进程互守** - 可开启守护进程，Stellar 服务与守护进程相互监测异常关闭并重新启动
-
-### 架构重构
-
-- **服务层重构** - 重新设计核心服务架构，优化模块间通信机制，提升整体性能与响应速度
-- **UserService 重写** - 全面重构用户服务层，优化服务架构设计，提升代码可维护性与扩展性
-- **Shizuku 兼容性修复** - 修复原 Shizuku 遗留的已知问题，增强框架稳定性
-
-### UI/UX 改进
-
-Stellar 对用户界面进行了全面重构，带来更现代、更直观的使用体验：
-
-- **全新授权管理界面** - 采用 Material Design 3 设计语言，打造简洁优雅的授权管理中心
-- **授权页面焕新** - 重新设计授权交互流程，操作更加流畅自然
-- **权限可视化展示** - 授权页清晰呈现各项细分权限，用户一目了然
-- **应用列表优化** - 改进已授权应用列表，权限状态一览无余
-- **引导流程升级** - 重新设计启动引导页面，新用户上手更轻松
-
-## 与 Shizuku 的主要区别
-
-### 移除的功能
-- **rish** - 移除 Shizuku 内置的 root shell 工具
-- **Sui** - 移除了 API 对 Zygisk-Sui 的支持
-
-### 新增的功能
-- **跟随启动机制** - 应用可跟随 Stellar 服务自动启动
-- **细分权限系统** - 支持多种权限类型的精细化管理
-- **权限回调增强** - 支持一次性授权感知
-- **降权激活** - Root 启动后可降权到 Shell 用户运行，提高安全性
-- **联发科支持**：修复了原版 v13.6.0 中一个导致 Shizuku 无法在联发科设备上运行的关键漏洞
-- **应用内更新**：可从 Github 获取更新详情并在应用内更新 Stellar
-- **TCP功能**：在连接 WiFi 时启动或预热 Stellar，下次无 WiFi 重启前可免 WiFi 启动
-
-### 重新启用的功能
-
-Stellar 重新启用了 Shizuku 最新版本中已标记为弃用的功能：
-
-- **`newProcess()` API** - 直接创建特权进程的方法，Shizuku 已弃用但 Stellar 保留支持
-- **运行时权限授予/撤销** - 通过 `grantRuntimePermission()` 和 `revokeRuntimePermission()` 为其他应用授予或撤销 Android 运行时权限
-
-这些功能在某些场景下仍然非常实用，Stellar 选择继续支持以提供更完整的 API。
-
-### 架构优化
-- 100% Kotlin 代码
-- 精简模块结构
-- 规范化命名
-
-## Shizuku 兼容层
-
-Stellar 内置了 Shizuku 兼容层，允许使用 Shizuku API 的应用无需修改代码即可使用 Stellar 服务。
-
-### 工作原理
-
-兼容层通过以下方式实现无缝兼容：
-
-1. **客户端兼容** - `ShizukuProvider` 接收 Stellar 服务发送的 Binder，并通过 `ShizukuCompat` 管理连接状态
-2. **服务端拦截** - `ShizukuServiceIntercept` 实现完整的 `IShizukuService` 接口，将 Shizuku API 调用转发到 Stellar 服务
-3. **权限映射** - 自动将 Shizuku 权限请求映射到 Stellar 的 `shizuku` 权限
-
-### 支持的 API
-
-兼容层支持 Shizuku 的核心 API：
-
-- `pingBinder()` / `getVersion()` / `getUid()` - 服务状态查询
-- `checkSelfPermission()` / `requestPermission()` - 权限管理
-- `newProcess()` - 创建特权进程
-- `addUserService()` / `removeUserService()` - 用户服务管理
-- `transactRemote()` - Binder 事务转发
-
-### 启用/禁用
-
-Shizuku 兼容层默认启用。如需禁用，可在 Stellar 管理器的设置页面中关闭「Shizuku 兼容层」开关。
-
-### 注意事项
-
-- 兼容层会自动拒绝来自 Shizuku Manager 的请求，避免冲突
-- 使用 Shizuku API 的应用需要在 `AndroidManifest.xml` 中配置 `ShizukuProvider`
-
-## 降权激活
-
-降权激活功能允许以 Root 权限启动 Stellar 服务后，自动降权到 Shell 用户（uid=2000）运行，提高安全性。
-
-### 启用方式
-
-在 Stellar 管理器的设置页面中，开启「降权激活」开关即可。
-
-### 工作原理
-
-启用降权激活后，启动流程如下：
-
-```
-su (root) → libchid.so 2000 → libstellar.so --apk=...
+# 仅构建特权服务端逻辑
+./gradlew :server:assemble
 ```
 
-1. 使用 Root 权限执行 `libchid.so`
-2. `libchid.so` 将进程身份切换到 uid=2000（Shell 用户）
-3. 以 Shell 身份执行 `libstellar.so` 启动服务
+Release 产物输出到 `out/apk/`，mapping 输出到 `out/mapping/`。
 
-### 注意事项
+签名配置（`signing.properties`，不入库）：`KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEYSTORE_ALIAS` / `KEYSTORE_ALIAS_PASSWORD`。
 
-- 降权激活仅在 Root 启动模式下生效
-- ADB 启动模式本身就是 uid=2000，无需降权
-- 降权后服务将失去 Root 特有的能力（如写入系统属性、访问受保护目录等）
+## 模块结构
 
-## 快速开始
+```
+manager/    Android 应用（UI + 启动器 + ADB 协议栈 + 密码切换），applicationId: roro.stellar.manager
+server/     特权服务端逻辑，运行在 ADB / Root 进程中
+api/        客户端 SDK 子模块（独立仓库 Stellar-API）
+  ├── aidl/        AIDL 接口（IStellarService / IRemoteProcess / IRemotePtyProcess ...）
+  ├── api/         客户端 API 入口（Stellar.kt / StellarHelper.kt）
+  ├── provider/    StellarProvider（ContentProvider，接收服务端 Binder）
+  ├── shared/      共享常量（StellarApiConstants）
+  └── userservice/ UserService 框架（密码切换的特权执行体由此启动）
+```
 
-### 集成 Stellar 到你的应用
+## 核心数据流
 
-查看完整的集成指南和 API 文档：
+1. **启动**：`manager/startup/` 经 Root（`Chid` 降权）或 `manager/adb/` 经 ADB 拉起 `server`。
+2. **Binder 分发**：`server/binder/BinderDistributor` + `server/BinderSender` 通过 ContentProvider
+   把 Binder 投递给管理器（`manager/StellarManagerProvider`）。
+3. **客户端连接**：`api/provider/StellarProvider` 接收 Binder → `api/api/Stellar.kt` 封装调用。
+4. **密码切换**：`PasswordSwitchViewModel` 通过 `StellarUserService` 以 shell / root 身份启动
+   `PasswordSwitchService`，后者经 AIDL 完成读写与回滚。
 
-- **[API 集成指南](INTEGRATION_GUIDE.md)** - 完整的集成步骤、API 参考和代码示例
-- **[从 Shizuku 迁移](INTEGRATION_GUIDE.md#从-shizuku-迁移)** - 详细的迁移步骤和 API 对比
+## 与上游的差异（本分支已移除）
 
-### 基本使用流程
+- Shizuku 兼容层（`shizuku/` 模块与 `server/.../shizuku/`）
+- 第三方应用客户端授权（不再弹出授权界面，不再向第三方授予权限）
+- 应用内更新检查、终端、命令快捷方式、Apps 授权管理页、设置页、日志页
+- 开机自启 / 无障碍保活 / 通知重试 / 开机脚本 / 进程守护
+- 除英文与简体中文外的多语言资源
 
-1. 添加 JitPack 依赖：`com.github.roro2239:Stellar-API:latest.release`
-2. 配置 `StellarProvider` 到 AndroidManifest
-3. 初始化 Stellar 并请求权限
-4. 使用 Stellar API 执行特权操作
+> AIDL 契约中仍保留 `isShizukuCompatEnabled` / `setShizukuCompatEnabled` / `isDaemonEnabled` /
+> `setDaemonEnabled` 等方法，服务端以无害桩实现，以保证与 `api/` 子模块的 AIDL 一致。
 
-> 详细步骤请查看 [API 集成指南](INTEGRATION_GUIDE.md)
+## 许可证
 
-## 致谢与许可
-
-### 致谢
-
-本项目基于 [Shizuku](https://github.com/RikkaApps/Shizuku)，由 [RikkaApps](https://github.com/RikkaApps) 开发。感谢原作者的杰出工作。
-
-### 许可证
-
-本项目的修改部分采用 [Mozilla Public License 2.0](LICENSE)。
-
-原始 Shizuku 代码保留其 Apache License 2.0 许可证。
-
-| 组件 | 许可证 |
-|------|--------|
-| Stellar 修改部分 | Mozilla Public License 2.0 |
-| [Shizuku](https://github.com/RikkaApps/Shizuku) 原始代码 | Apache License 2.0 |
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request。在提交代码前，请确保：
-
-- 代码风格符合项目规范（Kotlin）
-- 添加必要的注释和文档
-- 测试通过所有功能
-
-## 联系方式
-
-- GitHub Issues: [提交问题](https://github.com/RORO2239/Stellar/issues)
-- 项目主页: [RORO2239/Stellar](https://github.com/RORO2239/Stellar)
-
-## 相关链接
-
-- [完整 API 文档](INTEGRATION_GUIDE.md)
-- [原版 Shizuku](https://github.com/RikkaApps/Shizuku)
-
-<a href="https://www.star-history.com/?repos=roro2239%2FStellar&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=roro2239/Stellar&type=date&theme=dark&legend=top-left&sealed_token=DOGFkMNyKuECKihlTE4gifDbvly4k4Wr5IjBhG6w407ZVASud6bVrZlbDfNkY6rKv8GpKgpOYQ8uYyfFmwMEx6uLVcustg1MI-tvtusH3twxsJFOlmpY-g" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=roro2239/Stellar&type=date&legend=top-left&sealed_token=DOGFkMNyKuECKihlTE4gifDbvly4k4Wr5IjBhG6w407ZVASud6bVrZlbDfNkY6rKv8GpKgpOYQ8uYyfFmwMEx6uLVcustg1MI-tvtusH3twxsJFOlmpY-g" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=roro2239/Stellar&type=date&legend=top-left&sealed_token=DOGFkMNyKuECKihlTE4gifDbvly4k4Wr5IjBhG6w407ZVASud6bVrZlbDfNkY6rKv8GpKgpOYQ8uYyfFmwMEx6uLVcustg1MI-tvtusH3twxsJFOlmpY-g" />
- </picture>
-</a>
+见 [LICENSE](LICENSE)。

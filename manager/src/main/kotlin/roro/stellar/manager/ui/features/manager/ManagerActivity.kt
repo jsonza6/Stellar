@@ -13,6 +13,9 @@ import androidx.navigation.compose.rememberNavController
 import roro.stellar.manager.ui.theme.StellarTheme
 import roro.stellar.manager.ui.theme.ThemePreferences
 
+/**
+ * 二级页宿主：当前只承载 Starter（Root / ADB 启动器）路由。
+ */
 class ManagerActivity : ComponentActivity() {
 
     companion object {
@@ -21,12 +24,6 @@ class ManagerActivity : ComponentActivity() {
         private const val EXTRA_HOST = "host"
         private const val EXTRA_PORT = "port"
         private const val EXTRA_HAS_SECURE_SETTINGS = "has_secure_settings"
-
-        fun createLogsIntent(context: Context): Intent {
-            return Intent(context, ManagerActivity::class.java).apply {
-                putExtra(EXTRA_ROUTE, ManagerRoute.Logs.route)
-            }
-        }
 
         fun createStarterIntent(
             context: Context,
@@ -49,7 +46,7 @@ class ManagerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val route = intent.getStringExtra(EXTRA_ROUTE) ?: ManagerRoute.Logs.route
+        val route = intent.getStringExtra(EXTRA_ROUTE) ?: ManagerRoute.Starter.route
         val isRoot = intent.getBooleanExtra(EXTRA_IS_ROOT, true)
         val host = intent.getStringExtra(EXTRA_HOST)
         val port = intent.getIntExtra(EXTRA_PORT, 0)
@@ -86,12 +83,6 @@ private fun ManagerNavHost(
         navController = navController,
         startDestination = startRoute
     ) {
-        composable(ManagerRoute.Logs.route) {
-            LogsScreen(
-                onBackClick = onClose
-            )
-        }
-
         composable(ManagerRoute.Starter.route) {
             StarterScreen(
                 isRoot = isRoot,
@@ -105,6 +96,5 @@ private fun ManagerNavHost(
 }
 
 sealed class ManagerRoute(val route: String) {
-    data object Logs : ManagerRoute("logs")
     data object Starter : ManagerRoute("starter")
 }

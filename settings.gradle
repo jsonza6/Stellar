@@ -10,9 +10,7 @@ pluginManagement {
         id("com.android.library") version '8.13.2'
         id("org.jetbrains.kotlin.android") version '2.2.0'
         id("org.jetbrains.kotlin.plugin.compose") version "2.1.21"
-        id("com.google.devtools.ksp") version "2.2.0-2.0.2"
         id("dev.rikka.tools.autoresconfig") version "1.2.2"
-        id("dev.rikka.tools.materialthemebuilder") version "1.5.1"
         id("dev.rikka.tools.refine") version "4.4.0"
     }
 }
@@ -29,7 +27,6 @@ dependencyResolutionManagement {
             content {
                 includeGroup("com.github.topjohnwu.libsu")
                 includeGroup("com.github.Kyant0")
-                includeGroup("com.github.jeziellago")
             }
         }
     }
@@ -46,10 +43,6 @@ dependencyResolutionManagement {
         managerLibs {
             from(files('manager/manager.versions.toml'))
         }
-
-        demoLibs {
-            from(files('api/demo/demo.versions.toml'))
-        }
     }
 }
 
@@ -65,10 +58,8 @@ def props = new Properties()
 if (propFile.canRead()) {
     props.load(new FileInputStream(propFile))
 
-    if (props != null) {
-        if (props["api.useLocal"].equals("true")) {
-            root = props["api.dir"]
-        }
+    if (props.getProperty("api.useLocal") == "true") {
+        root = props.getProperty("api.dir")
     }
 }
 include ':aidl'
@@ -83,17 +74,5 @@ project(':api').projectDir = file("$root${File.separator}api")
 include ':provider'
 project(':provider').projectDir = file("$root${File.separator}provider")
 
-include ':hidden-api-stub'
-project(':hidden-api-stub').projectDir = file("$root${File.separator}hidden-api-stub")
-
 include ':userservice'
 project(':userservice').projectDir = file("$root${File.separator}userservice")
-
-include ':shizuku-aidl'
-project(':shizuku-aidl').projectDir = file('shizuku/aidl')
-
-include ':shizuku-api'
-project(':shizuku-api').projectDir = file('shizuku/api')
-
-include ':demo'
-project(':demo').projectDir = file("$root${File.separator}demo")

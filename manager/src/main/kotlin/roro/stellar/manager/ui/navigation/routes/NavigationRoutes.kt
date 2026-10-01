@@ -12,9 +12,7 @@ import roro.stellar.manager.R
  * Destinations shown in the bottom bar / navigation rail.
  *
  * This fork keeps only the two pages it needs: starting the service and switching the password
- * manager. The Apps, Terminal and Settings screens still exist in the source tree because other
- * packages depend on symbols they declare (for example `CommandItem` and `AppType`), but they are
- * no longer reachable from the UI, so R8 drops them from a release build.
+ * manager.
  */
 enum class MainScreen(
     val route: String,

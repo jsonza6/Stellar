@@ -6,23 +6,22 @@ import android.content.SharedPreferences
 import roro.stellar.manager.util.EmptySharedPreferencesImpl
 import roro.stellar.manager.util.PortBlacklistUtils
 
+/**
+ * 管理器本地偏好设置。
+ *
+ * 已移除开机自启（BootMode）、Shizuku 兼容开关与进程守护开关等条目：本分支只保留
+ * Root / ADB 手动启动与密码管理器切换所需的最小设置。
+ */
 object StellarSettings {
     const val NAME = "settings"
-    const val BOOT_MODE = "boot_mode"
     const val TCPIP_PORT = "tcpip_port"
     const val TCPIP_PORT_ENABLED = "tcpip_port_enabled"
-    const val BOOT_BROADCAST_ACCESSIBILITY_ENABLED = "boot_broadcast_accessibility_enabled"
     const val THEME_MODE = "theme_mode"
     const val START_PAGE = "start_page"
     const val DROP_PRIVILEGES = "drop_privileges"
     const val WIRELESS_DEBUGGING_SU = "wireless_debugging_su"
-    const val SHIZUKU_COMPAT_ENABLED = "shizuku_compat_enabled"
-    const val ACCESSIBILITY_AUTO_START_PROMPTED = "accessibility_auto_start_prompted"
     const val LAST_VERSION_CODE = "last_version_code"
-    const val DAEMON_ENABLED = "daemon_enabled"
     const val HIDE_BACKGROUND = "hide_background"
-
-    enum class BootMode { NONE, BROADCAST, TCPIP_PREWARM, SCRIPT }
 
     enum class LaunchMethod { UNKNOWN, ROOT, ADB }
     const val LAST_LAUNCH_METHOD = "last_launch_method"
@@ -35,15 +34,6 @@ object StellarSettings {
 
     fun setLastLaunchMethod(method: LaunchMethod) {
         getPreferences().edit().putString(LAST_LAUNCH_METHOD, method.name).apply()
-    }
-
-    fun getBootMode(): BootMode {
-        val name = getPreferences().getString(BOOT_MODE, BootMode.NONE.name) ?: BootMode.NONE.name
-        return runCatching { BootMode.valueOf(name) }.getOrDefault(BootMode.NONE)
-    }
-
-    fun setBootMode(mode: BootMode) {
-        getPreferences().edit().putString(BOOT_MODE, mode.name).apply()
     }
 
     private var preferences: SharedPreferences? = null
@@ -69,12 +59,6 @@ object StellarSettings {
                 .getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
             preferences?.let { prefs ->
-                if (prefs.getString(BOOT_MODE, null) == "ACCESSIBILITY") {
-                    prefs.edit()
-                        .putString(BOOT_MODE, BootMode.BROADCAST.name)
-                        .putBoolean(BOOT_BROADCAST_ACCESSIBILITY_ENABLED, true)
-                        .apply()
-                }
                 if (!prefs.contains(TCPIP_PORT_ENABLED)) {
                     prefs.edit().putBoolean(TCPIP_PORT_ENABLED, true).apply()
                 }
