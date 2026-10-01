@@ -113,6 +113,8 @@ import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.Unlock
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import java.io.EOFException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -217,6 +219,8 @@ internal fun StarterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .overScrollVertical()
+                .scrollEndHaptic()
                 .verticalScroll(scrollState)
                 .padding(paddingValues)
                 .padding(horizontal = horizontalPadding, vertical = 12.dp)
@@ -374,7 +378,7 @@ private fun StepActionContent(
         if (!hasLocalNetworkPermission && !viewModel.isRootMode()) {
             Text(
                 text = stringResource(R.string.need_local_network_permission),
-                style = MiuixTheme.textStyles.footnote1,
+                style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.error
             )
             Spacer(Modifier.height(8.dp))
@@ -492,7 +496,7 @@ private fun StepActionContent(
                                 )
                                 Text(
                                     stringResource(R.string.miui_pairing_warning_body),
-                                    style = MiuixTheme.textStyles.footnote1,
+                                    style = MiuixTheme.textStyles.body2,
                                     color = MiuixTheme.colorScheme.onErrorContainer,
                                 )
                             }
@@ -678,7 +682,7 @@ private fun TimelineStep(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = description,
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = if (isPending) onContainer.copy(alpha = 0.55f) else onContainer.copy(alpha = 0.85f),
                 )
                 action?.invoke(this)

@@ -102,13 +102,13 @@ fun ServerStatusCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.service_status),
-                        style = MiuixTheme.textStyles.title3,
+                        style = MiuixTheme.textStyles.title2,
                         color = onContainer,
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = if (isRunning) stringResource(R.string.service_running) else stringResource(R.string.service_not_running),
-                        style = MiuixTheme.textStyles.footnote1,
+                        style = MiuixTheme.textStyles.body2,
                         color = onContainer.copy(alpha = 0.72f),
                     )
                 }
@@ -206,7 +206,7 @@ fun AdbRestrictedHintCard(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.adb_restricted_hint_message),
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = onContainer.copy(alpha = 0.78f),
                 )
             }
@@ -332,7 +332,7 @@ private fun ActionCard(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }

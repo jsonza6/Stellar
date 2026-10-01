@@ -32,6 +32,8 @@ import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @Composable
@@ -67,6 +69,9 @@ fun HomeScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                // Miuix 的滚动手感：越界回弹 + 滚到底部/顶部的轻触反馈。
+                .overScrollVertical()
+                .scrollEndHaptic()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),

@@ -73,6 +73,8 @@ import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import java.text.DateFormat
 import java.util.Date
@@ -113,6 +115,8 @@ fun PasswordSwitchScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .overScrollVertical()
+                .scrollEndHaptic()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
@@ -210,7 +214,7 @@ fun PasswordSwitchScreen(
                         Text(
                             it,
                             modifier = Modifier.padding(horizontal = 4.dp),
-                            style = MiuixTheme.textStyles.footnote1,
+                            style = MiuixTheme.textStyles.body2,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
@@ -264,7 +268,7 @@ fun PasswordSwitchScreen(
             item(key = "more_note") {
                 Text(
                     "每次应用前保存配置，写入后重新读取核对。系统更新或其他应用仍可能改回设置，可随时刷新查看。",
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
@@ -307,19 +311,19 @@ fun PasswordSwitchScreen(
                     Text(
                         if (state.keepOthers) "保留其他已启用的凭据提供者。"
                         else "已启用凭据提供者列表将仅保留 ${viewModel.label(selected)}。",
-                        style = MiuixTheme.textStyles.footnote1,
+                        style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
                     when (state.providers.firstOrNull { it.component == selected }?.supportsPasskeys) {
                         false -> Text(
                             "这个服务没有声明支持通行密钥；只能按它实际支持的凭据类型使用。",
-                            style = MiuixTheme.textStyles.footnote1,
+                            style = MiuixTheme.textStyles.body2,
                             color = MiuixTheme.colorScheme.error,
                         )
 
                         null -> Text(
                             "无法确认这个服务的通行密钥支持情况。",
-                            style = MiuixTheme.textStyles.footnote1,
+                            style = MiuixTheme.textStyles.body2,
                             color = MiuixTheme.colorScheme.error,
                         )
 
@@ -331,7 +335,7 @@ fun PasswordSwitchScreen(
                 }
                 Text(
                     "请仅选择你信任的密码管理器。未选择的项目保持原样，操作前的配置会保存在本机。",
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
@@ -355,7 +359,7 @@ fun PasswordSwitchScreen(
                 LabeledValue("自动填充服务", summary(state.backup, SettingKey.AUTOFILL, viewModel))
                 Text(
                     "将恢复以上三项系统配置。如果原应用已卸载或停用，恢复配置不会使它重新可用。",
-                    style = MiuixTheme.textStyles.footnote1,
+                    style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
@@ -417,7 +421,7 @@ private fun ConnectionCard(state: PasswordSwitchState) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    Text("正在启动特权服务…", style = MiuixTheme.textStyles.footnote1)
+                    Text("正在启动特权服务…", style = MiuixTheme.textStyles.body2)
                 }
             }
         }
@@ -488,7 +492,7 @@ private fun ServiceSection(
         Text(
             description,
             modifier = Modifier.padding(horizontal = 16.dp),
-            style = MiuixTheme.textStyles.footnote1,
+            style = MiuixTheme.textStyles.body2,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -631,7 +635,7 @@ private fun ProviderPickerSheet(
             Text(
                 "只列出当前用户下已安装并启用、声明了对应服务的应用。",
                 Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                style = MiuixTheme.textStyles.footnote1,
+                style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
 
@@ -758,7 +762,7 @@ private fun LabeledValue(label: String, value: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             label,
-            style = MiuixTheme.textStyles.footnote1,
+            style = MiuixTheme.textStyles.body2,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
         Text(value, style = MiuixTheme.textStyles.body2)
@@ -770,7 +774,7 @@ private fun ChangeLine(label: String, from: String, to: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             label,
-            style = MiuixTheme.textStyles.footnote1,
+            style = MiuixTheme.textStyles.body2,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
         Text(
