@@ -57,49 +57,10 @@ object ShizukuCallbackFactory {
             }
 
             override fun requestPermission(uid: Int, pid: Int, requestCode: Int) {
-                val userId = uid / 100000
-                val packages = PackageManagerApis.getPackagesForUidNoThrow(uid)
-                val packageName = packages.firstOrNull() ?: return
-
-                LOGGER.i("Shizuku 权限请求: uid=$uid, pid=$pid, pkg=$packageName, code=$requestCode")
-
-                val ai = PackageManagerCompat.getApplicationInfo(packageName, 0, userId) ?: run {
-                    LOGGER.w("无法获取应用信息: $packageName")
-                    return
-                }
-
-                val currentFlag = configManager.getPermissionFlag(uid, ShizukuApiConstants.PERMISSION_NAME)
-
-                if (currentFlag == ConfigManager.FLAG_DENIED) {
-                    LOGGER.i("Shizuku 权限已被永久拒绝: uid=$uid")
-                    shizukuNotifier.notifyPermissionResult(uid, pid, requestCode, false)
-                    return
-                }
-
-                if (currentFlag == ConfigManager.FLAG_GRANTED) {
-                    LOGGER.i("Shizuku 权限已被永久授权: uid=$uid")
-                    shizukuNotifier.notifyPermissionResult(uid, pid, requestCode, true)
-                    return
-                }
-
-                if (configManager.find(uid) == null) {
-                    configManager.createConfigWithAllPermissions(uid, packageName)
-                }
-
-                val lastDenyTime = clientManager.findClient(uid, pid)?.lastDenyTimeMap?.get(ShizukuApiConstants.PERMISSION_NAME) ?: 0
-                val denyOnce = (System.currentTimeMillis() - lastDenyTime) > 10000
-
-                val intent = Intent(ServerConstants.REQUEST_PERMISSION_ACTION)
-                    .setPackage(ServerConstants.MANAGER_APPLICATION_ID)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-                    .putExtra("uid", uid)
-                    .putExtra("pid", pid)
-                    .putExtra("requestCode", requestCode)
-                    .putExtra("applicationInfo", ai)
-                    .putExtra("denyOnce", denyOnce)
-                    .putExtra("permission", ShizukuApiConstants.PERMISSION_NAME)
-
-                ActivityManagerApis.startActivityNoThrow(intent, null, userId)
+                // 本分支不提供客户端授权：Shizuku 兼容层的权限申请同样一律拒绝，
+                // 不再拉起管理器的确认界面。需要 Shizuku 权限的应用请使用官方 Stellar。
+                LOGGER.i("Shizuku 权限申请一律拒绝: uid=$uid, pid=$pid, code=$requestCode")
+                shizukuNotifier.notifyPermissionResult(uid, pid, requestCode, false)
             }
         }
     }

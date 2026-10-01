@@ -168,18 +168,9 @@ class MainActivity : ComponentActivity() {
         if (isGranted) {
             clearSourceApp()
         } else {
-            sourceAuthorizationStarted = true
-            runCatching {
-                startActivity(
-                    RequestPermissionActivity.createSourceAuthorizationIntent(
-                        this,
-                        packageInfo,
-                        permission
-                    )
-                )
-            }.onFailure {
-                sourceAuthorizationStarted = false
-            }
+            // 本分支不提供客户端授权：被其他应用拉起时不再弹出授权界面，
+            // 直接清掉 referrer 状态。第三方应用请使用官方 Stellar。
+            clearSourceApp()
         }
     }
 

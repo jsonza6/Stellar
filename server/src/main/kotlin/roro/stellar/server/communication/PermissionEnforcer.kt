@@ -27,14 +27,8 @@ class PermissionEnforcer(
         permission: String = StellarApiConstants.PERMISSION_STELLAR
     ): Boolean {
         if (isSelf(caller) || isManager(caller)) return true
-
-        val clientRecord = clientManager.findClient(caller.uid, caller.pid) ?: return false
-
-        if (StellarApiConstants.isRuntimePermission(permission)) {
-            return clientRecord.allowedMap[permission] == true
-        }
-
-        return configManager.find(caller.uid)?.permissions?.get(permission) == ConfigManager.FLAG_GRANTED
+        // 本分支不向第三方应用授予任何权限，因此这里恒为 false。
+        return false
     }
 
     fun enforceManager(caller: CallerContext, func: String) {
@@ -52,17 +46,10 @@ class PermissionEnforcer(
     ) {
         if (isSelf(caller) || isManager(caller)) return
 
-        val clientRecord = clientManager.findClient(caller.uid, caller.pid)
-        if (clientRecord == null) {
-            val msg = "Permission Denial: $func from pid=${caller.pid}, uid=${caller.uid} is not an attached client"
-            LOGGER.w(msg)
-            throw SecurityException(msg)
-        }
-
-        if (clientRecord.allowedMap[permission] != true) {
-            val msg = "Permission Denial: $func from pid=${caller.pid}, uid=${caller.uid} requires permission $permission"
-            LOGGER.w(msg)
-            throw SecurityException(msg)
-        }
+        // 本分支不向第三方应用授予权限：无论此前是否被授予过，一律拒绝。
+        val msg = "Permission Denial: $func from pid=${caller.pid}, uid=${caller.uid}; " +
+                "this build does not authorize client apps"
+        LOGGER.w(msg)
+        throw SecurityException(msg)
     }
 }
