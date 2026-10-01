@@ -34,6 +34,8 @@ android {
         buildConfig true
         prefab true
         compose true
+        // The password switching feature talks to its user service over AIDL.
+        aidl true
     }
 
     def signingPropsFile = rootProject.file("signing.properties")
@@ -153,6 +155,8 @@ dependencies {
     implementation project(':server')
     implementation project(':api')
     implementation project(':provider')
+    // Needed by the password switching feature: StellarUserService runs the privileged helper.
+    implementation project(':userservice')
 
     implementation libs.hidden.compat
     compileOnly libs.hidden.stub

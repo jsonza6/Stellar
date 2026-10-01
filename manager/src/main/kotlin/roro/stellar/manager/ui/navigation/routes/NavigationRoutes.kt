@@ -2,10 +2,12 @@ package roro.stellar.manager.ui.navigation.routes
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Terminal
@@ -44,5 +46,14 @@ enum class MainScreen(
         labelRes = R.string.nav_settings,
         icon = Icons.Outlined.Settings,
         iconFilled = Icons.Filled.Settings
+    ),
+
+    // Appended last on purpose: StartPage and any persisted selectedIndex map to the first four
+    // entries by position, so new destinations must not be inserted in the middle.
+    PasswordSwitch(
+        route = "password_switch_graph",
+        labelRes = R.string.nav_password_switch,
+        icon = Icons.Outlined.Key,
+        iconFilled = Icons.Filled.Key
     )
 }

@@ -47,6 +47,7 @@ import roro.stellar.manager.ui.features.apps.AppsScreen
 import roro.stellar.manager.ui.features.home.HomeScreen
 import roro.stellar.manager.ui.features.home.HomeViewModel
 import roro.stellar.manager.ui.features.manager.ManagerActivity
+import roro.stellar.manager.ui.features.passwordswitch.PasswordSwitchScreen
 import roro.stellar.manager.ui.features.settings.SettingsScreen
 import roro.stellar.manager.ui.features.terminal.TerminalScreen
 import roro.stellar.manager.ui.navigation.components.LocalNavigationState
@@ -328,6 +329,17 @@ private fun MainScreenContent(
                         onNavigateToLogs = {
                             context.startActivity(ManagerActivity.createLogsIntent(context))
                         }
+                    )
+                }
+            }
+
+            navigation(
+                startDestination = "password_switch",
+                route = MainScreen.PasswordSwitch.route
+            ) {
+                composable("password_switch") {
+                    PasswordSwitchScreen(
+                        topAppBarState = topAppBarState
                     )
                 }
             }
