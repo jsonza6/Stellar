@@ -76,8 +76,10 @@ fun ServerStatusCard(
     apiVersion: Int,
     onStopClick: () -> Unit
 ) {
-    val container = if (isRunning) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.errorContainer
-    val onContainer = if (isRunning) MiuixTheme.colorScheme.onPrimaryContainer else MiuixTheme.colorScheme.onErrorContainer
+    // 运行中用 Miuix 的浅蓝提示容器（tertiaryContainer），未运行用普通卡片容器。
+    // 不用 primaryContainer —— 它在 Miuix 里是饱和填充蓝（#5D9BFF），当大卡片底会过重。
+    val container = if (isRunning) MiuixTheme.colorScheme.tertiaryContainer else MiuixTheme.colorScheme.surfaceContainer
+    val onContainer = if (isRunning) MiuixTheme.colorScheme.onTertiaryContainer else MiuixTheme.colorScheme.onSurfaceContainer
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -91,8 +93,10 @@ fun ServerStatusCard(
             ) {
                 LeadingIconBadge(
                     icon = if (isRunning) MiuixIcons.Ok else MiuixIcons.Info,
-                    tint = onContainer,
-                    container = onContainer.copy(alpha = 0.14f),
+                    tint = if (isRunning) MiuixTheme.colorScheme.onPrimaryContainer
+                    else MiuixTheme.colorScheme.onSecondaryContainer,
+                    container = if (isRunning) MiuixTheme.colorScheme.primaryContainer
+                    else MiuixTheme.colorScheme.secondaryContainer,
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
@@ -311,7 +315,9 @@ private fun ActionCard(
         ) {
             LeadingIconBadge(
                 icon = icon,
-                tint = MiuixTheme.colorScheme.primary,
+                // Miuix 的图标底座惯例：primaryContainer 饱和填充 + onPrimaryContainer 图标，
+                // 也就是 HyperOS 的蓝色圆角方块。
+                tint = MiuixTheme.colorScheme.onPrimaryContainer,
                 container = MiuixTheme.colorScheme.primaryContainer,
             )
 

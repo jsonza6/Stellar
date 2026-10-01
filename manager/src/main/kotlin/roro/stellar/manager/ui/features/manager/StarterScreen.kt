@@ -85,6 +85,7 @@ import roro.stellar.manager.compat.BuildUtils.atLeast33
 import roro.stellar.manager.compat.LocalNetwork
 import roro.stellar.manager.startup.command.Starter
 import roro.stellar.manager.ui.navigation.components.FixedTopAppBar
+import roro.stellar.manager.ui.theme.StellarColors
 import roro.stellar.manager.util.EnvironmentUtils
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
@@ -92,6 +93,7 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
@@ -578,20 +580,21 @@ private fun TimelineStep(
     val isError = status == StepStatus.ERROR
     val isWarning = status == StepStatus.WARNING
 
+    // Miuix 没有 warning 语义色，这里用应用自定义的琥珀色（见 StellarColors）。
     val accent = when {
         isError -> MiuixTheme.colorScheme.error
-        isWarning -> MiuixTheme.colorScheme.secondary
+        isWarning -> StellarColors.warningAccent
         else -> MiuixTheme.colorScheme.primary
     }
     val container = when {
         isError -> MiuixTheme.colorScheme.errorContainer
-        isWarning -> MiuixTheme.colorScheme.secondaryContainer
+        isWarning -> StellarColors.warningContainer
         isPending -> MiuixTheme.colorScheme.surfaceVariant
         else -> MiuixTheme.colorScheme.surfaceContainer
     }
     val onContainer = when {
         isError -> MiuixTheme.colorScheme.onErrorContainer
-        isWarning -> MiuixTheme.colorScheme.onSecondaryContainer
+        isWarning -> StellarColors.onWarningContainer
         isPending -> MiuixTheme.colorScheme.onSurfaceVariantSummary
         else -> MiuixTheme.colorScheme.onSurfaceContainer
     }
@@ -626,6 +629,11 @@ private fun TimelineStep(
                 isRunning -> CircularProgressIndicator(
                     modifier = Modifier.size(14.dp),
                     strokeWidth = 2.dp,
+                    // 圆点本身就是主色，必须换成 onPrimary 才看得见（默认前景色是 primary）。
+                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                        foregroundColor = MiuixTheme.colorScheme.onPrimary,
+                        backgroundColor = MiuixTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+                    ),
                 )
             }
         }
