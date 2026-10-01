@@ -27,7 +27,8 @@ fun Bundle.toSnapshot(): SettingsSnapshot {
 class PasswordSwitchService(context: Context) : IPasswordSwitchService.Stub() {
     private val appUserId = context.applicationInfo.uid / 100000
     private val catalog = ProviderCatalog(context)
-    private val controller = SettingsController(ShellSettingsStore(StellarCommandRunner()))
+    private val runner = ShellCommandRunner()
+    private val controller = SettingsController(ShellSettingsStore(runner))
 
     @Synchronized
     override fun read(userId: Int): Bundle = respond(userId) { controller.read(userId) }
@@ -81,6 +82,7 @@ class PasswordSwitchService(context: Context) : IPasswordSwitchService.Stub() {
     }
 
     override fun destroy() {
+        runCatching { runner.close() }
         exitProcess(0)
     }
 }

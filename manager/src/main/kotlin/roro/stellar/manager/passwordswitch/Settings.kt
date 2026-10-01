@@ -145,7 +145,7 @@ class ShellSettingsStore(private val runner: CommandRunner) : SettingsStore {
         val error = Regex("(?im)^\\s*(?:error|exception|.*SecurityException|permission denial|permission denied|bad arguments|unknown command)")
             .containsMatchIn(result.output)
         if (result.code != 0 || error) throw SettingsFailure(
-            "系统拒绝读写设置，请检查 Stellar 服务状态及系统限制。", result.output.take(4000),
+            "系统拒绝读写设置，请检查 Stellar 服务的运行身份及系统限制。", result.output.take(4000),
         )
         return result.output
     }
