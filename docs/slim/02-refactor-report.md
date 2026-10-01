@@ -1,8 +1,24 @@
 # Stellar 瘦身改造 · 执行报告（Refactor Report）
 
 > 文档编号：02-refactor-report
-> 阶段：执行完成（代码已改动）
-> 结论依据：直接读取仓库源码 + 全量符号引用扫描（**本机无编译环境，未做编译验证**）
+> 阶段：执行完成（代码已改动）· **已通过 GitHub Actions 真实构建验证**
+> 结论依据：直接读取仓库源码 + 全量符号引用扫描 + GitHub Actions 构建
+
+## 0. 构建验证结果（GitHub Actions）
+
+| 项 | 结果 |
+|---|---|
+| 提交 | `2678176` refactor: 收敛为单一用途工具（启动服务 + 密码管理器切换） |
+| 工作流 | Manager CI #9（`manager-ci.yml`），事件 push |
+| 运行 | https://github.com/jsonza6/Stellar/actions/runs/36816290001 |
+| 结论 | ✅ **success**（04:41:33Z → 04:47:19Z，约 5 分 46 秒） |
+| 关键步骤 | `构建 Release APK` **success**、`上传 Release APK` **success** |
+| 产物 | `manager-release-apk`，3,545,390 字节（约 3.4 MB） |
+
+> 该步骤覆盖了 NDK 29 JNI 编译（starter / chid / adb_pairing / rish）、Kotlin 编译
+> （manager / server / api / provider / userservice）、AIDL 生成、R8 混淆与资源收缩，
+> 因此**本次删除未产生任何编译期悬空引用**，包括 `server/src/main/java/rikka/rish/`
+> 与 AIDL 桩方法。
 
 ---
 
@@ -150,8 +166,8 @@
 
 | # | 项 | 说明 |
 |---|---|---|
-| R1 | **未做编译验证** | 本机无可用编译环境（无 JDK 21 / Gradle 依赖缓存），以上均为静态扫描结论。**首次构建请重点检查**：`server/src/main/java/rikka/rish/` 是否被正确编译、`ClientRecord` / `ClientManager` 是否残留未用 import |
-| R2 | 残留未用 import | 部分改写文件可能存在「已删逻辑遗留的 import」（Kotlin 仅告警不报错），首次编译后可按 warning 清理 |
+| R1 | ~~未做编译验证~~ **已解除** | 已通过 GitHub Actions `:manager:assembleRelease` 真实构建（见 §0），删除未引入编译错误 |
+| R2 | 残留未用 import | 部分改写文件可能存在「已删逻辑遗留的 import」（Kotlin 仅告警不报错，不影响构建）。CI 日志需认证才能下载，未能核对告警清单；如需清理可在本地构建时按 warning 处理 |
 | R3 | `:demo` 源码仍在子模块 | 按决策 D4 保留；如需彻底删除，须在 `Stellar-API` 仓库提交并更新父仓库 submodule 指针 |
 | R4 | 数据迁移 | 删除 Room 后，旧版数据库文件与旧设置项（BootMode 等）不再被读取，属预期行为 |
 | R5 | 第三方集成能力 | 本分支已不向第三方应用授予任何权限（`PermissionEnforcer` 对非管理器一律拒绝）；`api/` SDK 仍在但仅管理器自身使用 |
@@ -160,6 +176,8 @@
 
 ## 6. 建议的后续动作
 
-1. 在具备 JDK 21 + Android SDK（NDK 29）的环境执行 `./gradlew :manager:assembleRelease`，按 warning 清理残留 import。
+1. ~~在具备 JDK 21 + Android SDK（NDK 29）的环境执行构建~~ → **已在 CI 完成并通过**（见 §0）。
+   如需清理「未用 import」告警，可在本地 `./gradlew :manager:assembleRelease` 后按 warning 处理。
 2. 真机验证两条启动路径（Root / ADB 无线）与密码切换的事务回滚（可在写入过程中断连测试「无法确认」分支）。
 3. 如确认不再需要 PTY / 交互式 shell，可进一步删除 `rikka/rish` 与 `RemotePtyProcessHolder`、`ProcessManager.newPtyProcess`（需同步改 `newPtyProcess` 为抛异常实现）。
+4. 如需安装包，可从 CI 产物 `manager-release-apk`（保留 7 天）下载。
