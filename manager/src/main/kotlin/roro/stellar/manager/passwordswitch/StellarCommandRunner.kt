@@ -2,6 +2,7 @@ package roro.stellar.manager.passwordswitch
 
 import roro.stellar.Stellar
 import java.io.InputStream
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -22,7 +23,10 @@ class StellarCommandRunner : CommandRunner {
             val code = process.waitFor()
             CommandResult(code, (stdout.get(2, TimeUnit.SECONDS) + stderr.get(2, TimeUnit.SECONDS)).trim())
         } catch (failure: Exception) {
-            throw SettingsFailure("无法执行系统命令，请确认 Stellar 服务正在运行。", failure.toString())
+            // The reader tasks run on the executor, so their failure arrives wrapped.
+            val cause = (failure as? ExecutionException)?.cause ?: failure
+            if (cause is SettingsFailure) throw cause
+            throw SettingsFailure("无法执行系统命令，请确认 Stellar 服务正在运行。", cause.toString())
         } finally {
             runCatching { process.destroy() }
         }
