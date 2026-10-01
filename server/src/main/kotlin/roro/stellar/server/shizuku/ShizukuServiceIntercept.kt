@@ -27,7 +27,10 @@ class ShizukuServiceIntercept(
     private val clientManager get() = callback.clientManager
     private val configManager get() = callback.configManager
 
-    private fun isEnabled(): Boolean = configManager.isShizukuCompatEnabled()
+    // 本分支不提供 Shizuku 兼容层：第三方 Shizuku 应用不应通过本应用获得特权。
+    // 恒为 false，使所有 Shizuku API 调用直接抛 SecurityException，
+    // 不再受 configManager 里的开关影响（设置页已移除，也无法再打开它）。
+    private fun isEnabled(): Boolean = false
 
     private fun enforceEnabled() {
         if (!isEnabled()) {
