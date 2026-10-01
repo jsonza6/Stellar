@@ -38,24 +38,6 @@
     public static void main(java.lang.String[]);
 }
 
-# Keep StellarDaemon for app_process
--keep class roro.stellar.server.daemon.StellarDaemon {
-    public static void main(java.lang.String[]);
-}
-
-# Keep Shizuku AIDL interfaces
--keep class moe.shizuku.server.** { *; }
--keep interface moe.shizuku.server.** { *; }
-
-# Keep Shizuku API classes (BinderContainer must keep original package name for client compatibility)
--keep class moe.shizuku.api.** { *; }
-# Prevent repackaging of Shizuku classes - clients expect exact package names
--keeppackagenames moe.shizuku.**
-
-# Keep Shizuku compatibility layer
--keep class roro.stellar.server.shizuku.** { *; }
--keep class roro.stellar.shizuku.** { *; }
-
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
 }
@@ -74,6 +56,10 @@
 -renamesourcefileattribute SourceFile
 
 # Fix R8 missing classes for androidx.window
+# Miuix pulls androidx.window (via material3-window-size-class); the sidecar classes
+# only exist on devices that ship the WindowManager sidecar, so they are optional at
+# compile time and must not fail the R8 minification step.
+-dontwarn androidx.window.sidecar.**
 -dontwarn androidx.window.extensions.**
 -dontwarn androidx.window.area.**
 -dontwarn androidx.window.reflection.**
