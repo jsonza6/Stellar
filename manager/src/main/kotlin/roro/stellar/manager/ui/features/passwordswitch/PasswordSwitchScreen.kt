@@ -101,7 +101,7 @@ fun PasswordSwitchScreen(
     Scaffold(
         topBar = {
             StandardLargeTopAppBar(
-                title = stringResource(R.string.nav_password_switch),
+                title = stringResource(R.string.password_switch_title),
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(

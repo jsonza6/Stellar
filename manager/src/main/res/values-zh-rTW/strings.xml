@@ -28,6 +28,8 @@
     <string name="nav_apps">授權應用</string>
     <string name="nav_terminal">命令</string>
     <string name="nav_settings">設定</string>
+    <string name="nav_password_switch">密碼切換</string>
+    <string name="password_switch_title">密碼管理器切換</string>
 
     <!-- Common -->
     <string name="confirm">確定</string>

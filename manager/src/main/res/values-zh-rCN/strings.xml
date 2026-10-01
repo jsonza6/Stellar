@@ -6,6 +6,8 @@
     <string name="nav_apps">授权应用</string>
     <string name="nav_terminal">命令</string>
     <string name="nav_settings">设置</string>
+    <string name="nav_password_switch">密码切换</string>
+    <string name="password_switch_title">密码管理器切换</string>
 
     <!-- Common -->
     <string name="confirm">确定</string>

@@ -8,6 +8,7 @@
     <string name="nav_terminal">Terminal</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_password_switch">Passwords</string>
+    <string name="password_switch_title">Password manager switch</string>
 
     <!-- Common -->
     <string name="confirm">OK</string>
