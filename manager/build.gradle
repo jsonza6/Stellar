@@ -163,8 +163,6 @@ dependencies {
     implementation managerLibs.bundles.core
     implementation managerLibs.bundles.lifecycle
 
-    implementation managerLibs.material
-
     def composeBom = platform(managerLibs.composeBom)
     implementation composeBom
     implementation managerLibs.bundles.composeUi

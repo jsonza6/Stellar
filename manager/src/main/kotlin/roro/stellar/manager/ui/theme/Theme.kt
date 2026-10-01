@@ -14,37 +14,34 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 /**
  * 应用根主题。
  *
- * 使用 Miuix（HyperOS / MIUI 设计语言）作为唯一的主题与组件来源。整体界面风格参考
- * SukiSU 管理器：底部导航 + 分组卡片 + 状态标签。
+ * 使用 **Miuix 自带配色**（HyperOS / MIUI 设计语言），不要接 Monet：
+ * `ColorSchemeMode.Monet*` 走的是系统 Material You 壁纸取色，会让界面看起来就是 MD3。
  *
- * [ThemeMode] 映射到 Miuix 的 [ColorSchemeMode]：开启动态取色时使用 Monet 变体
- * （Android 12+ 取系统壁纸色），否则回退到 Miuix 内置的浅色/深色配色。
+ * Miuix 默认调色板（见 Miuix `Colors.kt`）：
+ * - 浅色：背景 `#F7F7F7`、卡片纯白、主色 HyperOS 蓝 `#3482FF`
+ * - 深色：背景纯黑、卡片 `#242424`、主色 `#277AF7`
+ *
+ * [ThemeMode] 只决定浅色 / 深色 / 跟随系统。
  */
 @Composable
 fun StellarTheme(
     themeMode: ThemeMode = ThemePreferences.themeMode.value,
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val controller = remember(themeMode) {
+        ThemeController(
+            colorSchemeMode = when (themeMode) {
+                ThemeMode.LIGHT -> ColorSchemeMode.Light
+                ThemeMode.DARK -> ColorSchemeMode.Dark
+                ThemeMode.AUTO -> ColorSchemeMode.System
+            }
+        )
+    }
+
     val darkTheme = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.AUTO -> isSystemInDarkTheme()
-    }
-
-    val controller = remember(themeMode, dynamicColor) {
-        ThemeController(
-            colorSchemeMode = when (themeMode) {
-                ThemeMode.LIGHT ->
-                    if (dynamicColor) ColorSchemeMode.MonetLight else ColorSchemeMode.Light
-
-                ThemeMode.DARK ->
-                    if (dynamicColor) ColorSchemeMode.MonetDark else ColorSchemeMode.Dark
-
-                ThemeMode.AUTO ->
-                    if (dynamicColor) ColorSchemeMode.MonetSystem else ColorSchemeMode.System
-            }
-        )
     }
 
     val view = LocalView.current

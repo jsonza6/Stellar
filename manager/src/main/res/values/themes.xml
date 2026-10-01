@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar" />
+    <!--
+      基础主题刻意不使用 Material 3 的配色（Theme.Material3.*）。
+      Compose 侧完全由 MiuixTheme 负责，这里只把窗口底色对齐 Miuix 的 surface，
+      避免冷启动 / 转场时露出 MD3 的底色（M3 浅色为 #FEF7FF）。
+      状态栏与导航栏由 enableEdgeToEdge() 处理。
+    -->
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/app_window_background</item>
+        <item name="android:colorBackground">@color/app_window_background</item>
+    </style>
 
     <style name="AppTheme.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#FEF7FF</item>
+        <item name="windowSplashScreenBackground">@color/app_window_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>

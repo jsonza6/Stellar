@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatDelegate
 import com.topjohnwu.superuser.Shell
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import roro.stellar.manager.compat.BuildUtils.atLeast30
@@ -33,7 +32,8 @@ class StellarApplication : Application() {
 
     private fun init(context: Context) {
         StellarSettings.initialize(context)
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        // 深浅色由 MiuixTheme 的 ThemeController 负责，窗口底色由 values-night 资源跟随系统，
+        // 这里不再用 AppCompatDelegate 强制浅色（活动是 ComponentActivity，该调用本来就是空操作）。
     }
 
     override fun onCreate() {

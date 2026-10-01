@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+
+    <!--
+      窗口与启动图底色，对齐 Miuix 浅色主题的 surface（#F7F7F7）。
+      不能用 Material 3 的 #FEF7FF，否则启动瞬间会露出 MD3 的配色。
+    -->
+    <color name="app_window_background">#F7F7F7</color>
+</resources>

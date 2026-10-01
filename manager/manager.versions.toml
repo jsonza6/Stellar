@@ -1,9 +1,7 @@
 [versions]
 kotlinxCoroutines = "1.10.2"
-appcompat = "1.7.1"
 coreKtx = "1.17.0"
 lifecycle = "2.10.0"
-material = "1.13.0"
 composeBom = "2026.01.01"
 activityCompose = "1.12.3"
 navigationCompose = "2.9.7"
@@ -19,18 +17,14 @@ miuix = "0.9.1"
 kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinxCoroutinesAndroid = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 
-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 coreKtx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 lifecycleViewmodelKtx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lifecycleLivedataKtx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 lifecycleViewmodelCompose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 coreSplashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 
-material = { module = "com.google.android.material:material", version.ref = "material" }
-
 composeBom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 composeUi = { module = "androidx.compose.ui:ui" }
-composeMaterial3 = { module = "androidx.compose.material3:material3" }
 activityCompose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 composeRuntimeLivedata = { module = "androidx.compose.runtime:runtime-livedata" }
 composeUiGraphics = { module = "androidx.compose.ui:ui-graphics" }
@@ -54,8 +48,8 @@ miuixIcons = { module = "top.yukonga.miuix.kmp:miuix-icons-android", version.ref
 
 [bundles]
 kotlinxCoroutines = ["kotlinxCoroutinesCore", "kotlinxCoroutinesAndroid"]
-core = ["appcompat", "coreKtx", "coreSplashscreen"]
+core = ["coreKtx", "coreSplashscreen"]
 lifecycle = ["lifecycleViewmodelKtx", "lifecycleLivedataKtx", "lifecycleViewmodelCompose"]
-composeUi = ["composeUi", "composeMaterial3", "activityCompose", "composeRuntimeLivedata", "composeUiGraphics", "navigationCompose"]
+composeUi = ["composeUi", "activityCompose", "composeRuntimeLivedata", "composeUiGraphics", "navigationCompose"]
 nativeCrypto = ["libcxx", "boringssl", "hiddenApiBypass", "bcpkix"]
 miuix = ["miuixUi", "miuixPreference", "miuixIcons"]
